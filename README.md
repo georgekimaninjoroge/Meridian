@@ -5,13 +5,16 @@
 
 # Meridian
 
-### A live classroom & course platform built for African schools — not retrofitted from a Western one.
+### A lightweight, offline-first LMS with live classrooms built in — not bolted on.
 
-[![status](https://img.shields.io/badge/status-active%20development-2e9e5b?style=flat-square)](#)
-[![license](https://img.shields.io/badge/license-MIT-1a341a?style=flat-square)](LICENSE)
-[![stack](https://img.shields.io/badge/stack-Supabase%20%2B%20LiveKit-1a341a?style=flat-square)](#architecture)
-[![offline tolerant](https://img.shields.io/badge/built%20for-low--bandwidth-1a341a?style=flat-square)](#the-problem)
-[![made in](https://img.shields.io/badge/made%20in-Kenya%20%F0%9F%87%B0%F0%9F%87%AA-1a341a?style=flat-square)](#)
+No framework, no custom server, no separate conferencing tool duct-taped
+to a course portal. Go live in one click. Every session records and
+schedules itself. Course content works with no connection at all.
+
+[![Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-1a341a?style=flat-square)](LICENSE)
+[![Supabase](https://img.shields.io/badge/backend-Supabase-1a341a?style=flat-square)](#architecture)
+[![LiveKit](https://img.shields.io/badge/realtime-LiveKit-1a341a?style=flat-square)](#architecture)
+[![Kenya](https://img.shields.io/badge/built%20in-Kenya-1a341a?style=flat-square)](#)
 
 </div>
 
@@ -50,11 +53,10 @@ contracts regardless of how much the software is actually used, and a
 release cycle measured in quarters because the vendor has no competitive
 pressure once the contract is signed.
 
-Meridian's bet is narrower than "build a better LMS." It's that a live
-classroom should be something a teacher starts the same way they'd start
-a phone call — not something that requires a room booking, a
-verification step, or a separate piece of conferencing software duct-taped
-to a course portal.
+Meridian's premise: a live classroom should be something a teacher starts
+the same way they'd start a phone call — not something that requires a
+room booking, a verification step, or a separate piece of conferencing
+software duct-taped to a course portal.
 
 ---
 
