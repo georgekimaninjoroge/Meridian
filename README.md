@@ -5,11 +5,10 @@
 
 # Meridian
 
-### A lightweight, offline-first LMS with live classrooms built in — not bolted on.
+### Lightweight, offline-first LMS. Zero framework. Runs anywhere.
 
-No framework, no custom server, no separate conferencing tool duct-taped
-to a course portal. Go live in one click. Every session records and
-schedules itself. Course content works with no connection at all.
+Go live in one click. Every session records and schedules itself.
+Course content works with no connection at all.
 
 [![Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-1a341a?style=flat-square)](LICENSE)
 [![Supabase](https://img.shields.io/badge/backend-Supabase-1a341a?style=flat-square)](#architecture)
@@ -22,54 +21,55 @@ schedules itself. Course content works with no connection at all.
 
 ## The Problem
 
-The institutions that do have a live-classroom system in Kenya are
-mostly running [KENET's web conference platform](https://conference.ke)
-— free, built on open-source BigBlueButton, and the backbone of remote
-teaching for Kenyan universities during COVID, at one point serving
-hundreds of thousands of classes a year.
+Most live teaching in Kenya happens over [KENET's web conference
+platform](https://conference.ke) — free, built on open-source
+BigBlueButton, and genuinely the backbone of remote university teaching
+during COVID, at one point serving hundreds of thousands of classes a
+year. It's good infrastructure, built for what it's for.
 
-It works. It also has a structural ceiling:
+What it isn't built for: going live the moment a teacher decides to,
+without a registration and verification step first, and without an
+institution in the loop. It also serves universities and research
+institutions specifically — primary and secondary schools, the CBC
+context this project grew out of, sit outside that network entirely.
 
-- **Going live requires institutional approval first.** To create a
-  meeting room at all, a user has to register, and their identity has
-  to be verified by KENET *together with the institution's ICT
-  director* — before a teacher can ever open a room. There is no path
-  from "I want to teach right now" to actually teaching that doesn't
-  route through an administrative gatekeeper.
-- **It serves universities, not schools.** Membership is restricted to
-  universities, research institutes, and technical colleges. Primary
-  and secondary schools — the CBC system this project originally grew
-  out of — aren't part of this network at all. For that segment, the
-  honest answer today is closer to "WhatsApp groups and hope."
-- **A meeting room is not a course.** It has no concept of a syllabus,
-  a week, a recording that becomes that week's lecture automatically,
-  or a student dashboard that shows what's live right now. It's a
-  conferencing tool bolted onto whatever LMS the institution already
-  runs — usually Moodle, with its own separate maintenance burden.
-
-The handful of fully commercial systems sold into Kenyan schools sit on
-the other end: long procurement cycles, fixed annual maintenance
-contracts regardless of how much the software is actually used, and a
-release cycle measured in quarters because the vendor has no competitive
-pressure once the contract is signed.
-
-Meridian's premise: a live classroom should be something a teacher starts
-the same way they'd start a phone call — not something that requires a
-room booking, a verification step, or a separate piece of conferencing
-software duct-taped to a course portal.
+Meridian's premise is simple: a live classroom should be something a
+teacher starts the same way they'd start a phone call. Not a room
+booking. Not a separate conferencing tool duct-taped to a course portal.
+One action, and you're teaching.
 
 ---
 
-## What It Actually Does — and Where It Differs
+## What It Actually Does
 
-|                      | KENET / institutional systems                          | Commercial vendor systems                         | Meridian                                                        |
-|----------------------|----------------------------------------------------------|----------------------------------------------------|------------------------------------------------------------------|
-| Starting a class      | Requires prior registration + ICT-director verification  | Manual, vendor-trained staff usually involved      | One click — "Start Class Now," live in seconds                  |
-| Who it serves          | Universities & research institutions only                  | Whoever signs the contract                          | Built from the CBC/school context outward                       |
-| Recording               | Manual moderator action, separate from the course itself     | Varies, often a separate module                      | Automatic — every live session becomes that week's lecture       |
-| Scheduling               | No native course/week concept                                  | Usually exists, slow to change                        | Schedule once — the room opens itself, no one has to be present  |
-| Camera/mic at scale       | Unmanaged — moderator must mute/manage manually                  | Varies by vendor                                       | Mic always free; camera/share need a one-tap approval             |
-| Maintenance model          | Free, but fixed to whatever KENET ships and prioritizes             | Fixed annual contract, independent of actual usage       | Iterates continuously — a fix ships the day it's found, not the day a vendor schedules it |
+- **Go live in one click.** No room booking, no verification step,
+  no separate app to open.
+- **Mic always free; camera and screen-share need a one-tap approval.**
+  A room of 40 students doesn't become 40 webcams by default.
+- **Every session records itself** and becomes that week's lecture
+  automatically — no manual upload step.
+- **Schedule a class for later and it starts itself** at the right
+  time, with no one needing to be online to flip it on.
+- **Exactly one live lecture at a time, system-wide** — never an
+  ambiguous "which room is the real one" moment for a student.
+- **Course pages double as the archive** — synced lecture notes next
+  to the recorded video, organized by week.
+
+---
+
+## Roadmap
+
+What exists today is the core loop: go live, record, schedule, archive.
+What's actively being worked on next:
+
+- **Load balancing across LiveKit regions** as classroom count grows
+  past a single SFU's comfortable ceiling.
+- **A proper auth/permission layer at the edge function level**
+  (sidecar-style), instead of trusting client-asserted roles.
+- **Finer-grained recording controls** — per-segment, not just
+  start-to-end.
+- **A real admin layer** for school-level user and course management,
+  separate from the teacher/student surfaces shown here.
 
 ---
 
@@ -136,6 +136,8 @@ Meridian/
     livekit.js                    Room connect / token helpers
     supabase.js                     DB read/write + realtime subscriptions
     session.js                       Auth session handling
+    cache-janitor.js                  Activity-weighted offline cache eviction
+    storage-monitor.js                  Browser storage quota tracking + warnings
   supabase/functions/
     livekit-token/                   Issues join tokens, bakes in role
     livekit-permission-grant/         Approves a student's cam/share request
@@ -202,3 +204,6 @@ database schema aren't included here.
 
 Apache License 2.0 — see [LICENSE](LICENSE).
 
+<div align="center">
+Built solo, in Nairobi.
+</div>
