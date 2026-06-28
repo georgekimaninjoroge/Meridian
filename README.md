@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <div align="center">
 
 <!-- LOGO: drop your logo image in /assets/logo.png and uncomment the line below -->
@@ -199,4 +200,6 @@ database schema aren't included here.
 ## License
 
 Apache License 2.0 — see [LICENSE](LICENSE).
+=======
+>>>>>>> 0c1429b22177630e98008fa6f1e497480a3acade
 
