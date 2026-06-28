@@ -1,0 +1,572 @@
+================================================================================
+                         OFFLINE-FIRST LMS ARCHITECTURE                         
+================================================================================
+
+            (LOCAL-FIRST UI + SUPABASE COURSE DATA + REALTIME SYNC)             
+
+! UPDATED -- course/lecture/assignment/user data now lives in Supabase
+  (Postgres + Realtime + Storage), NOT Firestore. Firebase Auth is still
+  used for login/identity only. See CORE DESIGN PRINCIPLES near the
+  bottom for the current source-of-truth rules.
+
+
+                 +--------------------------------------------+                 
+                 |                 STUDENT UI                 |                 
+                 |--------------------------------------------|                 
+                 | Dashboard (index.html)                     |                 
+                 | Course View (course.html)                  |                 
+                 | Lecture Notes / Video Player               |                 
+                 | Offline Library                            |                 
+                 | Assignments                                |                 
+                 | Announcements                              |                 
+                 +--------------------------------------------+                 
+
+                                       |                                        
+                                       v                                        
+
+                 +--------------------------------------------+                 
+                 |                 TEACHER UI                 |                 
+                 |--------------------------------------------|                 
+                 | Dashboard (teacher.html)                   |                 
+                 | Course Mgmt (teacher_course.html)          |                 
+                 |   - Add/Edit/Delete Lecture                |                 
+                 |   - Upload Notes (PDF to Storage)          |                 
+                 |   - Upload Recording (MP4 to Storage)      |                 
+                 |   - Mark Live, Create Assignment           |                 
+                 |   - Post Announcement                      |                 
+                 |--------------------------------------------|                 
+                 | ! UI shell cached only - no IndexedDB      |                 
+                 |   for course data (Supabase live)          |                 
+                 +--------------------------------------------+                 
+
+                                       |                                        
+                                       v                                        
+
+                 +--------------------------------------------+                 
+                 |           ADMIN UI (admin.html)            |                 
+                 |--------------------------------------------|                 
+                 | Users - view/add, role/grade/stream        |                 
+                 | Courses - create/delete                    |                 
+                 | Assign Teachers -> course_teachers         |                 
+                 | Manual Enrollment -> enrollments           |                 
+                 | Auto-Enroll Rules                          |                 
+                 |   - University: Portal ID prefix           |                 
+                 |     match (e.g. DCS -> all DCS*)           |                 
+                 |   - CBC: grade + stream match              |                 
+                 |     (e.g. Grade 10 / East)                 |                 
+                 |--------------------------------------------|                 
+                 | ! Always network-fresh - excluded          |                 
+                 |   from Service Worker caching              |                 
+                 | ! Optimistic updates + Realtime            |                 
+                 |   row-patching (no full refetch)           |                 
+                 +--------------------------------------------+                 
+
+                                       |                                        
+                                       v                                        
+
+
+          +----------------------------------------------------------+          
+          |                    APPLICATION LAYER                     |          
+          |----------------------------------------------------------|          
+          | Vanilla JS App Logic                                     |          
+          | State Management                                         |          
+          | Connectivity Monitor                                     |          
+          |   - navigator.connection.effectiveType                   |          
+          |   - online/offline events                                |          
+          | Background Sync Controller                               |          
+          |   - triggers on connectivity detected                    |          
+          |   - auto-caches without user action                      |          
+          | Smart Cache Orchestrator (Option C)                      |          
+          |   - Priority 1: App shell + static assets                |          
+          |   - Priority 2: Notes/PDFs (WiFi or data)                |          
+          |   - Priority 3: Videos (WiFi only)                       |          
+          | Range Request Download Manager                           |          
+          |   - HTTP Range: bytes splits per chunk                   |          
+          |   - resumable, no server processing                      |          
+          | Chunk Manager                                            |          
+          |   - tracks chunks in download_metadata                   |          
+          |   - reassembles blobs for playback                       |          
+          | Storage Monitor                                          |          
+          |   - tracks usage via storage.estimate()                  |          
+          |   - requests persistent storage on start                 |          
+          |     (storage.persist() - best effort,                    |          
+          |      raises quota past ~2GB default                      |          
+          |      without requiring PWA install)                      |          
+          |   - warns student at 80% quota                           |          
+          |   - blocks video cache at 90% quota                      |          
+          | Supabase Sync Layer (JS/supabase.js)                     |          
+          |   - syncFromSupabase() pulls courses/                    |          
+          |     lectures/assignments/announcements                   |          
+          |     into IndexedDB on page load                          |          
+          |   - upsert/delete write straight through                 |          
+          |     to Supabase (no offline queue -                      |          
+          |     these require connectivity)                          |          
+          |   - subscribeToTable() - Realtime                        |          
+          |     channel, single shared client                        |          
+          | Playback Controller                                      |          
+          | Local Session Manager                                    |          
+          |   - restores Firebase session on reopen                  |          
+          |   - silent token refresh when online                     |          
+          |   - offline trusts cached token                          |          
+          +----------------------------------------------------------+          
+
+                                       |                                        
+                                       v                                        
+
+
++----------------------+  +----------------------+  +----------------------+  +----------------------+
+|     VIDEO SYSTEM     |  |     NOTES SYSTEM     |  |     AUTH SYSTEM      |  |    REALTIME SYNC     |
+|----------------------|  |----------------------|  |----------------------|  |----------------------|
+| Native HTML5         |  | pdf.js Viewer        |  | Firebase Auth        |  | Supabase Realtime    |
+| Range Requests       |  | Blob Loader          |  | JWT Token            |  | (supabase-js v2,     |
+| Chunked Fetch        |  | Offline Rendering    |  | Stored in IndexedDB  |  |  loaded on demand)   |
+| Custom Controls      |  | Blob URL Generation  |  | Persistent login     |  | One shared client    |
+| Offline Blob Playbac |  | Auto-cached on       |  |   (no logout on      |  |   per page (cached   |
+| WiFi-only cache      |  |   connectivity       |  |    tab/app close)    |  |   in-flight promise  |
+|----------------------|  +----------------------+  | Logout clears token  |  |   - avoids 'multiple |
+| ! Uploaded via Supab |                            | Silent refresh onlin |  |   GoTrue client' rac |
+|   Storage bucket     |                            +----------------------+  | On INSERT/UPDATE/    |
+|   'lecture-media'    |                                                      |   DELETE -> patch th |
+|   50MB free-plan cap |                                                      |   changed row, NOT a |
+|   per file           |                                                      |   full refetch       |
++----------------------+                                                      +----------------------+
+
+                                       |                                        
+                                       v                                        
+
+
++----------------------------------------+  +----------------------------------+
+|               INDEXEDDB                |  |            CACHE API             |
+|----------------------------------------|  |----------------------------------|
+| courses - synced from Supabase         |  | HTML pages, CSS, JavaScript      |
+| lectures - synced from Supabase        |  | Fonts, Icons, Images, Thumbnails |
+| assignments - synced from Supabase     |  | Offline fallback pages           |
+| announcements - synced from Supabase   |  | App shell                        |
+| auth_sessions                          |  | Static assets                    |
+|   - JWT token                          |  |----------------------------------|
+|   - user profile                       |  | ! admin.html explicitly          |
+|   - role (student/teacher/admin)       |  |   EXCLUDED from caching --       |
+| lecture_chunks                         |  |   always fetched fresh,          |
+|   - binary blob per chunk              |  |   network 'no-store'             |
+| chunk_metadata                         |  |   (manages live data, was        |
+|   - chunk index, byte ranges           |  |    never meant to work           |
+|   - download status                    |  |    offline -- see sw.js)         |
+| lecture_notes                          |  +----------------------------------+
+| pdf_blobs                              |                                      
+| download_metadata                      |                                      
+| storage_usage                          |                                      
+|   - active monitor                     |                                      
+|   - warn at 80%, block video at 90%    |                                      
++----------------------------------------+                                      
+
+               +------------------------------------------------+               
+               |                 LOCAL STORAGE                  |               
+               |------------------------------------------------|               
+               | playback_progress                              |               
+               |   - { courseCode, weekN, position }            |               
+               |   - written every 30s during playback          |               
+               |   - pushed when online (device-local           |               
+               |     for now; cross-device sync not             |               
+               |     yet wired to Supabase -- was               |               
+               |     Firestore in old design)                   |               
+               +------------------------------------------------+               
+
+                                       |                                        
+                                       v                                        
+
+
+            +------------------------------------------------------+            
+            |                SERVICE WORKER (sw.js)                |            
+            |------------------------------------------------------|            
+            | Fetch Interception                                   |            
+            | Route Handling                                       |            
+            | Offline Fallbacks                                    |            
+            | Static Asset Caching                                 |            
+            | ! admin.html bypass -- always                        |            
+            |   network, never cached (checked                     |            
+            |   before the generic HTML                            |            
+            |   cache-first rule)                                  |            
+            | Background Sync                                      |            
+            |   - triggers auto-cache on connectivity              |            
+            | Connectivity Detection                               |            
+            | Cache Validation                                     |            
+            | Smart Prefetch Trigger                               |            
+            |   - fires Option C priority queue                    |            
+            +------------------------------------------------------+            
+
+                                       |                                        
+                                       v                                        
+
+
+                ONLINE DETECTED                    OFFLINE MODE                 
+                   |                                                 |          
+                   v                                                 v          
+
+ +------------------------------------+   +----------------------------------+
+ |        BACKGROUND SYNC RUNS        |   |      LOCAL-FIRST EXECUTION       |
+ |------------------------------------|   |----------------------------------|
+ | Priority 1: App shell              |   | Read IndexedDB                   |
+ | Priority 2: Notes/PDFs             |   | Read Cache API                   |
+ | Priority 3: Videos WiFi            |   | Play cached video blobs          |
+ |   - Range requests, chunk by chunk |   | Render cached PDFs (pdf.js)      |
+ |   - stored as blobs in IndexedDB   |   | Load cached dashboard            |
+ | syncFromSupabase()                 |   | Restore session from IndexedDB   |
+ |   -> refresh IndexedDB course/     |   | Queue any pending syncs          |
+ |      lecture/assignment data       |   | Show storage usage to student    |
+ | Refresh JWT token (Firebase)       |   +----------------------------------+
+ +------------------------------------+                                       
+
+
+================================================================================
+                                 CLOUD BACKEND                                  
+================================================================================
+
+         (Supabase for data/storage/realtime + Firebase for auth only)          
+
++----------------------------------------------------+  +--------------------------+
+|                SUPABASE (Postgres)                 |  |      Firebase Auth       |
+|----------------------------------------------------|  |--------------------------|
+| users                                              |  | Email/Password Login     |
+|   - mirrors Firebase uid, role,                    |  | JWT Tokens               |
+|     portalId, grade, stream --                     |  | User Identity            |
+|     written at signup + settings save              |  | Session Validation       |
+| courses                                            |  |--------------------------|
+| lectures                                           |  | ! Still the source of    |
+| assignments                                        |  |   truth for login/       |
+| announcements                                      |  |   identity only -- one   |
+| course_teachers                                    |  |   Firestore doc per      |
+|   - (course_id, teacher_id)                        |  |   user (role, portalId,  |
+| enrollments                                        |  |   displayName, email)    |
+|   - (student_id, course_id)                        |  |   -- NOT course data     |
+| auto_enroll_rules                                  |  +--------------------------+
+|----------------------------------------------------|                              
+| RLS disabled on all tables -- access               |                              
+| controlled by app-level role checks                |                              
+| (student/teacher/admin), not Postgres              |                              
+| row policies                                       |                              
+|----------------------------------------------------|                              
+| anon Postgres role explicitly GRANTed              |                              
+| SELECT/INSERT/UPDATE/DELETE on every               |                              
+| table (required separately from RLS --             |                              
+| disabling RLS does NOT grant table                 |                              
+| access by itself)                                  |                              
+|----------------------------------------------------|                              
+| Realtime enabled via:                              |                              
+|   alter publication supabase_realtime              |                              
+|   add table users, courses, lectures,              |                              
+|   assignments, announcements,                      |                              
+|   course_teachers, enrollments;                    |                              
++----------------------------------------------------+                              
+
+                   |                    
+                   v                    
+
+           +--------------------------------------------------------+           
+           |        SUPABASE STORAGE (bucket: lecture-media)        |           
+           |--------------------------------------------------------|           
+           | Raw MP4 files (uploaded by teacher)                    |           
+           | Lecture PDFs                                           |           
+           |--------------------------------------------------------|           
+           | Private bucket -- signed URLs, 1yr expiry              |           
+           | Free plan cap: 50MB per file (hard ceiling,            |           
+           |   not a setting -- Pro plan raises this to             |           
+           |   500GB)                                               |           
+           | storage.objects RLS policies grant anon                |           
+           |   insert/select/update scoped to                       |           
+           |   bucket_id = 'lecture-media' (separate                |           
+           |   permission system from the table GRANTs              |           
+           |   above -- bucket policies must be created             |           
+           |   explicitly; disabling RLS on the public              |           
+           |   schema does NOT cover storage.objects)               |           
+           +--------------------------------------------------------+           
+
+
+================================================================================
+                        AUTO VIDEO CACHE FLOW (OPTION C)                        
+================================================================================
+
+
+Student opens app with internet
+                |
+                v
+Service worker detects connectivity
+                |
+                v
+Check navigator.connection.effectiveType
+                |
+         +------+------+
+         |             |
+       WiFi          4G/3G/slow
+         |             |
+         v             v
+  Cache videos    Cache notes only
+  + notes         Skip videos
+         |             |
+         +------+------+
+                |
+                v
+Check storage_usage in IndexedDB
+                |
+         +------+------+
+         |             |
+      < 80%          > 80%
+         |             |
+         v             v
+  Continue        Warn student
+  caching         Stop video cache
+                  Notes still cached
+                |
+                v
+Range requests -> Supabase Storage signed URL
+(chunks fetched sequentially)
+                |
+                v
+Each chunk stored as blob in IndexedDB
+                |
+                v
+download_metadata updated per chunk
+(resumable -- picks up where it left off)
+                |
+                v
+All chunks present -> lecture marked offline ready
+                |
+                v
+Playback fully offline -- no network needed
+
+================================================================================
+                                 PDF CACHE FLOW                                 
+================================================================================
+
+
+Connectivity detected (WiFi or data)
+                |
+                v
+Fetch PDF from Supabase Storage (signed URL)
+                |
+                v
+Store blob in IndexedDB (pdf_blobs)
+                |
+                v
+Generate Blob URL on access
+                |
+                v
+Render with pdf.js offline
+
+================================================================================
+                              AUTHENTICATION FLOW                               
+================================================================================
+
+
+First login (online)
+                |
+                v
+Firebase Auth validates credentials
+                |
+                v
+JWT token + user profile (role/portalId/displayName) stored in IndexedDB
+                |
+                v
+Profile mirrored into Supabase users table (same uid as primary key) --
+this is what lets admin.html list/search/assign/enroll users, since
+Firestore alone can't be joined against courses/enrollments
+                |
+                v
+App shell loaded and cached
+                |
+                v
+Student closes tab / browser
+                |
+                v
+Session persists -- NOT logged out
+                |
+                v
+Student reopens app (online or offline)
+                |
+                v
+Local Session Manager reads IndexedDB token
+                |
+         +------+------+
+         |             |
+       Online        Offline
+         |             |
+         v             v
+  Refresh token   Trust cached token
+  silently        serve app fully offline
+         |             |
+         +------+------+
+                |
+                v
+Student presses Logout in dashboard
+                |
+                v
+IndexedDB auth cleared
+Firebase signOut called
+Session ended
+
+--------------------------------------------------------------------------------
+ADMIN ACCOUNT CREATION (separate from student/teacher signup)
+--------------------------------------------------------------------------------
+
+
+Portal ID starting "ADM-" detected on signup form
+                |
+                v
+Admin Setup Key field appears (signup only -- NOT shown on login)
+                |
+                v
+Key checked client-side against ADMIN_SETUP_KEY in auth.html
+! Not real security -- anyone viewing page source sees the key.
+  Acts as a speed bump against accidental/casual self-promotion,
+  not a defense against a deliberate attacker. A real deployment
+  needs this check moved server-side (e.g. Supabase Edge Function).
+                |
+                v
+On success: role "admin" written to Firestore + mirrored to Supabase
+                |
+                v
+Routes to admin.html instead of index.html/teacher.html
+
+
+================================================================================
+                     ENROLLMENT & TEACHING ASSIGNMENT MODEL                     
+================================================================================
+
+
+Course existence is independent of both students and teachers.
+A course is created once (admin.html -> Create Course) and then:
+
+  TEACHER ASSIGNMENT                     STUDENT ENROLLMENT
+  (who teaches it)                       (who's taking it)
+        |                                       |
+        v                                       v
+  course_teachers table                   enrollments table
+  (course_id, teacher_id)                 (student_id, course_id)
+        |                                       |
+        v                                       v
+  teacher.html filters                    index.html filters
+  "My Courses" to only                    "My Courses" to only
+  courses this teacher_id                 courses this student_id
+  is assigned to                          is enrolled in
+
+Neither table determines the other -- a teacher being assigned to a
+course does NOT enroll any students, and vice versa. They're two
+independent many-to-many relationships sharing the same courses table.
+
+Enrollment can be created three ways (admin.html -> Enrollment / Auto-Enroll Rules):
+
+  1. MANUAL          admin picks one student + one course, clicks Enroll.
+                      Works for any institution type -- the universal fallback.
+
+  2. AUTO (PREFIX)    University-style. Matches every student whose Portal ID
+                      starts with a given prefix (e.g. "DCS") into one course.
+                      Relies on registration-number conventions that only
+                      make sense where IDs encode a program/department.
+
+  3. AUTO (GRADE/     CBC-style. Matches every student tagged with a given
+     STREAM)          grade (and optionally stream) into one course -- because
+                      CBC school IDs don't encode anything useful to match on;
+                      the "class" itself (e.g. Grade 10 East) is what defines
+                      who's in a course, not a naming pattern.
+
+grade/stream are optional fields on the users table -- blank for students
+at institutions that don't use them (e.g. university students using the
+prefix-match rule instead).
+
+================================================================================
+                             CORE DESIGN PRINCIPLES                             
+================================================================================
+
+
+  UI NEVER READS DIRECTLY FROM SUPABASE FOR COURSE DATA
+  (student/teacher pages -- admin.html is the one exception,
+   since it manages live data and was never meant to work offline)
+
+      WRONG (student/teacher pages):
+          UI ------> SUPABASE
+
+      CORRECT (student/teacher pages):
+          UI -> INDEXEDDB <-> SUPABASE (syncFromSupabase(), Realtime)
+
+      admin.html (intentional exception):
+          UI ------> SUPABASE directly, every action
+                     (optimistic update + Realtime row-patch,
+                      excluded from Service Worker caching)
+
+
+  FIREBASE AUTH = IDENTITY ONLY, NOT COURSE DATA
+
+  Firestore still holds exactly one thing per user: their auth profile
+  (uid, role, portalId, displayName, email). Everything else -- courses,
+  lectures, assignments, enrollments, teaching assignments -- lives in
+  Supabase, because Supabase supports relational joins (course <-> teacher
+  <-> student) that Firestore doesn't do well.
+
+
+  REALTIME PATCHES ROWS, NEVER REFETCHES WHOLE TABLES
+
+  Early version of admin.html's Realtime handlers called fetchXyz() (a
+  full table refetch) on every single change. This raced against
+  optimistic local updates -- clicking Enroll would add a row locally,
+  the write would trigger the table's own Realtime echo, and the refetch
+  would sometimes land with stale data and erase the new row ("immediately
+  disenrolls" bug). Fixed by patching only the row in the event payload
+  (payload.new / payload.old) directly into local state -- no network
+  round-trip per event.
+
+
+  ADMIN.HTML IS NEVER SERVICE-WORKER CACHED
+
+  Every other HTML page uses cache-first (works offline, background-
+  refreshes). admin.html manages live enrollment/assignment data and was
+  explicitly carved out to always hit the network -- caching it caused
+  changes to appear delayed by an unpredictable number of hard refreshes.
+
+
+  NO CUSTOM SERVER FOR APP LOGIC -- SUPABASE + FIREBASE ONLY
+
+  Supabase Postgres + Storage + Realtime, plus Firebase Auth.
+  No Node/Express backend, no Cloud Functions.
+
+
+  NO ENCODING -- RAW MP4 + RANGE REQUESTS
+
+
+  NO USER ACTION TO CACHE -- AUTO ON CONNECTIVITY
+
+This ensures:
+
+
+[x] Instant dashboard load (IndexedDB)
+[x] True offline functionality for course content (student/teacher)
+[x] Persistent login (no logout on close)
+[x] Resilient media playback (blob offline)
+[x] Simple teacher upload (raw MP4 -> Supabase Storage)
+[x] No FFmpeg / no transcoding
+[x] No custom server / no Cloud Functions
+[x] Admin console always shows live data, never stale cache
+[x] Realtime updates without manual refresh (row-patched, not refetched)
+[x] Institution-agnostic enrollment (manual / prefix / grade-stream)
+[x] WiFi-only video caching (saves mobile data)
+[x] Resumable chunk downloads
+[x] Active storage monitoring (warn/block + persist() quota request)
+[x] Graceful degradation under poor connectivity
+[x] Offline PDF rendering (pdf.js + blob URLs)
+[x] Background sync without user action
+[x] Teacher UI shell cached, no content overhead
+
+--------------------------------------------------------------------------------
+KNOWN GAPS / NOT YET BUILT
+--------------------------------------------------------------------------------
+
+
+[ ] Cross-device playback progress sync -- currently device-local only
+    (old design had this pushing to Firestore; not yet rebuilt against
+    Supabase)
+[ ] media.html still uses a hardcoded test video path, not the real
+    videoUrl/notesUrl from the lecture record
+[ ] No real student-count tracking on course cards (no field for it yet)
+[ ] Admin setup key is checked client-side only -- not real security,
+    needs to move server-side before a genuine production launch
+[ ] Video files capped at 50MB on Supabase free plan -- real lecture
+    videos will exceed this; needs either a Supabase Pro upgrade or
+    migrating video storage to something like Cloudflare R2 / Bunny.net

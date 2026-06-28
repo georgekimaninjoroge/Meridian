@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Admin Console | Meridian Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{ margin:0; padding:0; box-sizing:border-box; }
+:root{
+  --bg:#f6f4ef; --surface:#ffffff; --card:#ffffff;
+  --border:rgba(17,24,39,.07); --border2:rgba(17,24,39,.10);
+  --text:#111827; --sub:#6b7280;
+  --accent:#4f6b52; --accent-soft:#e8efe8;
+  --green:#3f7a54; --amber:#b7791f; --red:#c24141;
+  --shadow:0 10px 30px rgba(15,23,42,.05); --r:20px;
+}
+body{ font-family:'Inter',sans-serif; background:radial-gradient(circle at top left,#ece8df 0%,transparent 30%),linear-gradient(to bottom,#faf9f7 0%,#f3f1eb 100%); color:var(--text); min-height:100vh; -webkit-font-smoothing:antialiased; }
+.navbar{ position:sticky; top:0; z-index:100; backdrop-filter:blur(18px); background:rgba(250,249,247,.82); border-bottom:1px solid var(--border); }
+.nav-inner{ max-width:1400px; margin:auto; height:78px; padding:0 36px; display:flex; align-items:center; justify-content:space-between; gap:32px; }
+.brand{ display:flex; align-items:center; gap:14px; }
+.logo{ width:42px; height:42px; border-radius:14px; background:linear-gradient(135deg,#3a3a3a 0%,#7a7a7a 100%); display:grid; place-items:center; color:white; font-weight:700; font-size:14px; }
+.brand-title{ font-size:15px; font-weight:700; letter-spacing:-.02em; }
+.brand-sub{ font-size:12px; color:var(--sub); }
+.tabs{ display:flex; gap:8px; }
+.tab-btn{ border:none; background:transparent; height:42px; padding:0 16px; border-radius:12px; color:var(--sub); font-size:14px; font-weight:500; cursor:pointer; transition:.2s ease; }
+.tab-btn:hover,.tab-btn.active{ background:var(--accent-soft); color:var(--accent); }
+.avatar{ width:42px; height:42px; border-radius:50%; background:#3a3a3a; color:white; display:grid; place-items:center; font-weight:600; font-size:14px; }
+
+.wrap{ max-width:1300px; margin:0 auto; padding:36px; }
+.page-title{ font-size:28px; font-weight:700; letter-spacing:-.02em; margin-bottom:4px; }
+.page-sub{ color:var(--sub); font-size:14px; margin-bottom:28px; }
+
+.panel{ display:none; }
+.panel.active{ display:block; }
+
+.surface{ background:var(--surface); border:1px solid var(--border); border-radius:var(--r); box-shadow:var(--shadow); padding:24px; margin-bottom:24px; }
+.surface-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; flex-wrap:wrap; gap:12px; }
+.surface-title{ font-size:17px; font-weight:700; }
+
+.btn{ border:none; border-radius:12px; height:40px; padding:0 18px; font-size:13.5px; font-weight:600; cursor:pointer; transition:.2s ease; display:inline-flex; align-items:center; gap:8px; }
+.btn.primary{ background:var(--accent); color:white; }
+.btn.primary:hover{ background:#435c46; }
+.btn.outline{ background:transparent; border:1px solid var(--border2); color:var(--text); }
+.btn.outline:hover{ background:#f4f3ef; }
+.btn.danger{ background:transparent; border:1px solid rgba(194,65,65,.3); color:var(--red); }
+.btn.danger:hover{ background:rgba(194,65,65,.08); }
+.btn.small{ height:32px; padding:0 12px; font-size:12.5px; }
+
+table{ width:100%; border-collapse:collapse; }
+th{ text-align:left; font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--sub); padding:10px 12px; border-bottom:1px solid var(--border); }
+td{ padding:12px; border-bottom:1px solid var(--border); font-size:14px; }
+tr:last-child td{ border-bottom:none; }
+.tag{ display:inline-block; padding:3px 10px; border-radius:999px; font-size:11.5px; font-weight:600; }
+.tag.student{ background:#e8efe8; color:var(--green); }
+.tag.teacher{ background:#e8ecf0; color:#2b4c7e; }
+.tag.admin{ background:#fef3c7; color:#92400e; }
+
+input,select{ height:40px; border-radius:10px; border:1px solid var(--border2); padding:0 14px; font-size:14px; font-family:inherit; background:white; }
+.form-row{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
+.form-row input, .form-row select{ flex:1; min-width:140px; }
+
+.stats-row{ display:grid; grid-template-columns:repeat(4,1fr); gap:18px; margin-bottom:28px; }
+.stat-card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:22px; box-shadow:var(--shadow); }
+.stat-value{ font-size:32px; font-weight:700; letter-spacing:-.03em; }
+.stat-label{ font-size:13px; color:var(--sub); margin-top:4px; }
+
+.empty{ padding:30px; text-align:center; color:var(--sub); font-size:14px; }
+.rule-card{ display:flex; align-items:center; justify-content:space-between; padding:14px; border:1px solid var(--border); border-radius:14px; margin-bottom:10px; }
+@media(max-width:900px){ .stats-row{ grid-template-columns:1fr 1fr; } .nav-inner{ flex-wrap:wrap; height:auto; padding:14px 20px; } }
+</style>
+</head>
+<body>
+
+<div class="navbar">
+  <div class="nav-inner">
+    <div class="brand">
+      <div class="logo">MU</div>
+      <div>
+        <div class="brand-title">Meridian University</div>
+        <div class="brand-sub">Admin Console</div>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab-btn active" data-panel="panel-users">Users</button>
+      <button class="tab-btn" data-panel="panel-courses">Courses</button>
+      <button class="tab-btn" data-panel="panel-assign">Assign Teachers</button>
+      <button class="tab-btn" data-panel="panel-enroll">Enrollment</button>
+      <button class="tab-btn" data-panel="panel-autoenroll">Auto-Enroll Rules</button>
+    </div>
+    <div class="avatar-wrap" style="position:relative;">
+      <div class="avatar" id="adminAvatar" style="cursor:pointer;">A</div>
+      <div class="profile-dropdown" id="profileDropdown" style="position:absolute; top:calc(100% + 12px); right:0; width:240px; background:white; border:1px solid var(--border2); border-radius:20px; box-shadow:0 20px 48px rgba(15,23,42,.14); overflow:hidden; opacity:0; pointer-events:none; transform:translateY(-8px) scale(.97); transition:opacity .2s ease,transform .2s ease; z-index:300;">
+        <div style="display:flex; gap:12px; align-items:center; padding:18px; border-bottom:1px solid var(--border);">
+          <div style="width:40px; height:40px; border-radius:50%; background:#3a3a3a; color:white; display:grid; place-items:center; font-weight:600; font-size:13px; flex-shrink:0;" id="dropdownInitials">A</div>
+          <div>
+            <div style="font-weight:600; font-size:14px;" id="dropdownName">Loading...</div>
+            <div style="font-size:12.5px; color:var(--sub);" id="dropdownPortalId">Portal ID</div>
+          </div>
+        </div>
+        <div style="padding:8px;">
+          <button class="profile-item danger" style="width:100%; display:flex; align-items:center; gap:10px; border:none; background:transparent; padding:12px 14px; border-radius:12px; font-size:14px; cursor:pointer; color:#c24141;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Log Out
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="page-title">Admin Console</div>
+  <div class="page-sub">Manage users, courses, teaching assignments, and enrollment.</div>
+
+  <div class="stats-row" id="statsRow">
+    <div class="stat-card"><div class="stat-value" id="statUsers">—</div><div class="stat-label">Total Users</div></div>
+    <div class="stat-card"><div class="stat-value" id="statStudents">—</div><div class="stat-label">Students</div></div>
+    <div class="stat-card"><div class="stat-value" id="statCourses">—</div><div class="stat-label">Courses</div></div>
+    <div class="stat-card"><div class="stat-value" id="statEnrollments">—</div><div class="stat-label">Active Enrollments</div></div>
+  </div>
+
+  <!-- USERS -->
+  <div class="panel active" id="panel-users">
+    <div class="surface">
+      <div class="surface-head">
+        <div class="surface-title">All Users</div>
+        <button class="btn primary" id="btnAddUser">+ Add User Manually</button>
+      </div>
+      <table>
+        <thead><tr><th>Name</th><th>Portal ID</th><th>Email</th><th>Role</th><th>Grade/Stream</th><th></th></tr></thead>
+        <tbody id="usersTbody"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- COURSES -->
+  <div class="panel" id="panel-courses">
+    <div class="surface">
+      <div class="surface-head">
+        <div class="surface-title">Create Course</div>
+      </div>
+      <div class="form-row">
+        <input id="cCode" placeholder="Code (e.g. DCS 351)">
+        <input id="cTitle" placeholder="Title">
+        <input id="cSemester" placeholder="Semester">
+      </div>
+      <div class="form-row">
+        <input id="cSchedule" placeholder="Schedule (e.g. Mondays 8-11AM)">
+        <input id="cLecturer" placeholder="Lecturer name">
+        <select id="cMode"><option value="online">Online</option><option value="hybrid">Hybrid</option><option value="physical">Physical</option></select>
+      </div>
+      <button class="btn primary" id="btnCreateCourse">Create Course</button>
+    </div>
+
+    <div class="surface">
+      <div class="surface-head"><div class="surface-title">All Courses</div></div>
+      <table>
+        <thead><tr><th>Code</th><th>Title</th><th>Mode</th><th>Schedule</th><th></th></tr></thead>
+        <tbody id="coursesTbody"><tr><td colspan="5" class="empty">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ASSIGN TEACHERS -->
+  <div class="panel" id="panel-assign">
+    <div class="surface">
+      <div class="surface-head"><div class="surface-title">Assign Teacher to Course</div></div>
+      <div class="form-row">
+        <select id="assignCourseSel"></select>
+        <select id="assignTeacherSel"></select>
+        <button class="btn primary" id="btnAssignTeacher">Assign</button>
+      </div>
+    </div>
+    <div class="surface">
+      <div class="surface-head"><div class="surface-title">Current Assignments</div></div>
+      <table>
+        <thead><tr><th>Course</th><th>Teacher</th><th></th></tr></thead>
+        <tbody id="assignTbody"><tr><td colspan="3" class="empty">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ENROLLMENT -->
+  <div class="panel" id="panel-enroll">
+    <div class="surface">
+      <div class="surface-head"><div class="surface-title">Manual Enrollment</div></div>
+      <div class="form-row">
+        <select id="enrollStudentSel"></select>
+        <select id="enrollCourseSel"></select>
+        <button class="btn primary" id="btnEnroll">Enroll</button>
+      </div>
+    </div>
+    <div class="surface">
+      <div class="surface-head"><div class="surface-title">Active Enrollments</div></div>
+      <table>
+        <thead><tr><th>Student</th><th>Course</th><th></th></tr></thead>
+        <tbody id="enrollTbody"><tr><td colspan="3" class="empty">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- AUTO-ENROLL -->
+  <div class="panel" id="panel-autoenroll">
+    <div class="surface">
+      <div class="surface-head"><div class="surface-title">University Style — Portal ID Prefix</div></div>
+      <p style="color:var(--sub);font-size:13.5px;margin-bottom:14px;">Enrolls every student whose Portal ID starts with the given prefix (e.g. "DCS") into the chosen course.</p>
+      <div class="form-row">
+        <input id="prefixInput" placeholder="Prefix e.g. DCS">
+        <select id="prefixCourseSel"></select>
+        <button class="btn primary" id="btnAutoEnrollPrefix">Run Auto-Enroll</button>
+      </div>
+    </div>
+
+    <div class="surface">
+      <div class="surface-head"><div class="surface-title">CBC Style — Grade & Stream</div></div>
+      <p style="color:var(--sub);font-size:13.5px;margin-bottom:14px;">Enrolls every student tagged with this grade (and stream, if set) into the chosen course. Useful when there's no usable ID pattern.</p>
+      <div class="form-row">
+        <input id="gradeInput" placeholder="Grade e.g. 10">
+        <input id="streamInput" placeholder="Stream e.g. East (optional)">
+        <select id="gradeCourseSel"></select>
+        <button class="btn primary" id="btnAutoEnrollGrade">Run Auto-Enroll</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { requireSession, logout } from "./JS/session.js";
+import {
+  fetchUsers, upsertUser, syncFromSupabase,
+  upsertCourse, deleteCourse,
+  fetchCourseTeachers, assignTeacher, unassignTeacher,
+  fetchEnrollments, enrollStudent, unenrollStudent,
+  autoEnrollByPrefix, autoEnrollByGradeStream,
+  subscribeToTable
+} from "./JS/supabase.js";
+import { getAll } from "./JS/db.js";
+
+const session = await requireSession();
+if (session.role !== "admin") { window.location.href = "index.html"; }
+document.getElementById("adminAvatar").textContent = (session.displayName || "A").charAt(0).toUpperCase();
+document.getElementById("dropdownInitials").textContent = (session.displayName || "A").charAt(0).toUpperCase();
+document.getElementById("dropdownName").textContent = session.displayName || "Admin";
+document.getElementById("dropdownPortalId").textContent = session.portalId || "";
+
+const adminAvatar = document.getElementById("adminAvatar");
+const profileDropdown = document.getElementById("profileDropdown");
+adminAvatar.addEventListener("click", (e) => {
+  e.stopPropagation();
+  const isOpen = profileDropdown.style.opacity === "1";
+  profileDropdown.style.opacity = isOpen ? "0" : "1";
+  profileDropdown.style.pointerEvents = isOpen ? "none" : "all";
+  profileDropdown.style.transform = isOpen ? "translateY(-8px) scale(.97)" : "translateY(0) scale(1)";
+});
+document.addEventListener("click", (e) => {
+  if (!e.target.closest(".avatar-wrap")) {
+    profileDropdown.style.opacity = "0";
+    profileDropdown.style.pointerEvents = "none";
+    profileDropdown.style.transform = "translateY(-8px) scale(.97)";
+  }
+});
+document.querySelector(".profile-item.danger").addEventListener("click", () => logout());
+
+// ── Tabs ──
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById(btn.dataset.panel).classList.add("active");
+  });
+});
+
+let users = [], courses = [], courseTeachers = [], enrollments = [];
+
+async function loadAll() {
+  await syncFromSupabase().catch(()=>{});
+  [users, courses, courseTeachers, enrollments] = await Promise.all([
+    fetchUsers(), getAll("courses"), fetchCourseTeachers(), fetchEnrollments()
+  ]);
+  renderStats();
+  renderUsers();
+  renderCourses();
+  renderAssign();
+  renderEnroll();
+  fillSelects();
+}
+
+function renderStats() {
+  document.getElementById("statUsers").textContent = users.length;
+  document.getElementById("statStudents").textContent = users.filter(u => u.role === "student").length;
+  document.getElementById("statCourses").textContent = courses.length;
+  document.getElementById("statEnrollments").textContent = enrollments.length;
+}
+
+function userName(id) {
+  const u = users.find(x => x.id === id);
+  return u ? (u.display_name || u.portal_id || id) : id;
+}
+function courseName(id) {
+  const c = courses.find(x => x.id === id);
+  return c ? `${c.code} — ${c.title}` : id;
+}
+
+// ── USERS ──
+function renderUsers() {
+  const tbody = document.getElementById("usersTbody");
+  if (users.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="empty">No users yet.</td></tr>`; return; }
+  tbody.innerHTML = users.map(u => `
+    <tr>
+      <td>${u.display_name || "—"}</td>
+      <td>${u.portal_id || "—"}</td>
+      <td>${u.email || "—"}</td>
+      <td><span class="tag ${u.role}">${u.role}</span></td>
+      <td>${u.grade ? u.grade + (u.stream ? " / " + u.stream : "") : "—"}</td>
+      <td><button class="btn small outline btn-edit-user" data-id="${u.id}">Edit</button></td>
+    </tr>`).join("");
+
+  tbody.querySelectorAll(".btn-edit-user").forEach(btn => btn.addEventListener("click", async () => {
+    const u = users.find(x => x.id === btn.dataset.id);
+    const grade = prompt("Grade (CBC schools only, blank to skip):", u.grade || "") || "";
+    const stream = prompt("Stream (CBC schools only, blank to skip):", u.stream || "") || "";
+    try {
+      await upsertUser({ id: u.id, portalId: u.portal_id, displayName: u.display_name, email: u.email, role: u.role, grade, stream });
+      await loadAll();
+    } catch (e) { alert("Failed: " + e.message); }
+  }));
+}
+
+document.getElementById("btnAddUser").addEventListener("click", async () => {
+  const portalId = prompt("Portal ID:");
+  if (!portalId) return;
+  const displayName = prompt("Display name:") || portalId;
+  const email = prompt("Email:") || "";
+  const role = prompt("Role (student / teacher / admin):", "student") || "student";
+  const grade = prompt("Grade (optional, CBC schools):") || "";
+  const stream = prompt("Stream (optional, CBC schools):") || "";
+  const id = "manual_" + Date.now();
+  try {
+    await upsertUser({ id, portalId, displayName, email, role, grade, stream });
+    await loadAll();
+  } catch (e) { alert("Failed: " + e.message); }
+});
+
+// ── COURSES ──
+function renderCourses() {
+  const tbody = document.getElementById("coursesTbody");
+  if (courses.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="empty">No courses yet.</td></tr>`; return; }
+  tbody.innerHTML = courses.map(c => `
+    <tr>
+      <td>${c.code}</td><td>${c.title}</td><td>${c.mode}</td><td>${c.schedule||""}</td>
+      <td><button class="btn small danger btn-del-course" data-id="${c.id}">Delete</button></td>
+    </tr>`).join("");
+
+  tbody.querySelectorAll(".btn-del-course").forEach(btn => btn.addEventListener("click", async () => {
+    if (!confirm("Delete this course? This removes its lectures and assignments too.")) return;
+    const id = btn.dataset.id;
+    const idx = courses.findIndex(c => c.id === id);
+    if (idx === -1) return;
+    const removed = courses.splice(idx, 1)[0];
+    renderCourses();
+    renderStats();
+    fillSelects();
+    try {
+      await deleteCourse(id);
+    } catch (e) {
+      courses.splice(idx, 0, removed); // rollback
+      renderCourses();
+      renderStats();
+      fillSelects();
+      alert("Failed: " + e.message);
+    }
+  }));
+}
+
+document.getElementById("btnCreateCourse").addEventListener("click", async () => {
+  const code = document.getElementById("cCode").value.trim();
+  const title = document.getElementById("cTitle").value.trim();
+  if (!code || !title) { alert("Code and title required."); return; }
+  const id = code.replace(/\s+/g, "").toUpperCase();
+  const semester = document.getElementById("cSemester").value.trim();
+  const schedule = document.getElementById("cSchedule").value.trim();
+  const lecturer = document.getElementById("cLecturer").value.trim();
+  const mode = document.getElementById("cMode").value;
+  const tempCourse = { id, code, title, semester, schedule, lecturer, mode };
+  courses.push(tempCourse);
+  renderCourses();
+  renderStats();
+  fillSelects();
+  document.querySelectorAll("#panel-courses input").forEach(i => i.value = "");
+  try {
+    await upsertCourse(tempCourse);
+  } catch (e) {
+    courses.splice(courses.indexOf(tempCourse), 1); // rollback
+    renderCourses();
+    renderStats();
+    fillSelects();
+    alert("Failed: " + e.message);
+  }
+});
+
+// ── ASSIGN TEACHERS ──
+function renderAssign() {
+  const tbody = document.getElementById("assignTbody");
+  if (courseTeachers.length === 0) { tbody.innerHTML = `<tr><td colspan="3" class="empty">No assignments yet.</td></tr>`; return; }
+  tbody.innerHTML = courseTeachers.map(ct => `
+    <tr>
+      <td>${courseName(ct.course_id)}</td><td>${userName(ct.teacher_id)}</td>
+      <td><button class="btn small danger btn-unassign" data-course="${ct.course_id}" data-teacher="${ct.teacher_id}">Remove</button></td>
+    </tr>`).join("");
+
+  tbody.querySelectorAll(".btn-unassign").forEach(btn => btn.addEventListener("click", async () => {
+    const { course, teacher } = btn.dataset;
+    // Optimistic: remove from local state and re-render immediately
+    const idx = courseTeachers.findIndex(ct => ct.course_id === course && ct.teacher_id === teacher);
+    if (idx === -1) return;
+    const removed = courseTeachers.splice(idx, 1)[0];
+    renderAssign();
+    try {
+      await unassignTeacher(course, teacher);
+    } catch (e) {
+      courseTeachers.splice(idx, 0, removed); // rollback
+      renderAssign();
+      alert("Failed: " + e.message);
+    }
+  }));
+}
+
+document.getElementById("btnAssignTeacher").addEventListener("click", async () => {
+  const courseId = document.getElementById("assignCourseSel").value;
+  const teacherId = document.getElementById("assignTeacherSel").value;
+  if (!courseId || !teacherId) return;
+  // Optimistic: add to local state and re-render immediately
+  const tempRow = { course_id: courseId, teacher_id: teacherId };
+  courseTeachers.push(tempRow);
+  renderAssign();
+  try {
+    await assignTeacher(courseId, teacherId);
+  } catch (e) {
+    courseTeachers.splice(courseTeachers.indexOf(tempRow), 1); // rollback
+    renderAssign();
+    alert("Failed: " + e.message);
+  }
+});
+
+// ── ENROLLMENT ──
+function renderEnroll() {
+  const tbody = document.getElementById("enrollTbody");
+  if (enrollments.length === 0) { tbody.innerHTML = `<tr><td colspan="3" class="empty">No enrollments yet.</td></tr>`; return; }
+  tbody.innerHTML = enrollments.map(e => `
+    <tr>
+      <td>${userName(e.student_id)}</td><td>${courseName(e.course_id)}</td>
+      <td><button class="btn small danger btn-unenroll" data-student="${e.student_id}" data-course="${e.course_id}">Remove</button></td>
+    </tr>`).join("");
+
+  tbody.querySelectorAll(".btn-unenroll").forEach(btn => btn.addEventListener("click", async () => {
+    const { student, course } = btn.dataset;
+    const idx = enrollments.findIndex(en => en.student_id === student && en.course_id === course);
+    if (idx === -1) return;
+    const removed = enrollments.splice(idx, 1)[0];
+    renderEnroll();
+    renderStats();
+    try {
+      await unenrollStudent(student, course);
+    } catch (e) {
+      enrollments.splice(idx, 0, removed); // rollback
+      renderEnroll();
+      renderStats();
+      alert("Failed: " + e.message);
+    }
+  }));
+}
+
+document.getElementById("btnEnroll").addEventListener("click", async () => {
+  const studentId = document.getElementById("enrollStudentSel").value;
+  const courseId = document.getElementById("enrollCourseSel").value;
+  if (!studentId || !courseId) return;
+  const tempRow = { student_id: studentId, course_id: courseId };
+  enrollments.push(tempRow);
+  renderEnroll();
+  renderStats();
+  try {
+    await enrollStudent(studentId, courseId);
+  } catch (e) {
+    enrollments.splice(enrollments.indexOf(tempRow), 1); // rollback
+    renderEnroll();
+    renderStats();
+    alert("Failed: " + e.message);
+  }
+});
+
+// ── AUTO-ENROLL ──
+document.getElementById("btnAutoEnrollPrefix").addEventListener("click", async () => {
+  const prefix = document.getElementById("prefixInput").value.trim();
+  const courseId = document.getElementById("prefixCourseSel").value;
+  if (!prefix || !courseId) { alert("Prefix and course required."); return; }
+  try {
+    const n = await autoEnrollByPrefix(prefix, courseId);
+    alert(`Enrolled ${n} student(s).`);
+    await loadAll();
+  } catch (e) { alert("Failed: " + e.message); }
+});
+
+document.getElementById("btnAutoEnrollGrade").addEventListener("click", async () => {
+  const grade = document.getElementById("gradeInput").value.trim();
+  const stream = document.getElementById("streamInput").value.trim();
+  const courseId = document.getElementById("gradeCourseSel").value;
+  if (!grade || !courseId) { alert("Grade and course required."); return; }
+  try {
+    const n = await autoEnrollByGradeStream(grade, stream, courseId);
+    alert(`Enrolled ${n} student(s).`);
+    await loadAll();
+  } catch (e) { alert("Failed: " + e.message); }
+});
+
+// ── Fill all <select> dropdowns ──
+function fillSelects() {
+  const courseOpts = courses.map(c => `<option value="${c.id}">${c.code} — ${c.title}</option>`).join("");
+  const teacherOpts = users.filter(u => u.role === "teacher").map(u => `<option value="${u.id}">${u.display_name || u.portal_id}</option>`).join("");
+  const studentOpts = users.filter(u => u.role === "student").map(u => `<option value="${u.id}">${u.display_name || u.portal_id}</option>`).join("");
+
+  document.getElementById("assignCourseSel").innerHTML = courseOpts || `<option value="">No courses</option>`;
+  document.getElementById("assignTeacherSel").innerHTML = teacherOpts || `<option value="">No teachers</option>`;
+  document.getElementById("enrollCourseSel").innerHTML = courseOpts || `<option value="">No courses</option>`;
+  document.getElementById("enrollStudentSel").innerHTML = studentOpts || `<option value="">No students</option>`;
+  document.getElementById("prefixCourseSel").innerHTML = courseOpts || `<option value="">No courses</option>`;
+  document.getElementById("gradeCourseSel").innerHTML = courseOpts || `<option value="">No courses</option>`;
+}
+
+loadAll();
+
+// ── Realtime: reflect changes from other tabs/admins without manual refresh ──
+// Each subscription does a targeted re-fetch of just its own table + re-render,
+// not a full loadAll() — keeps this cheap even with frequent changes.
+
+subscribeToTable("course_teachers", (payload) => {
+  if (payload.eventType === "INSERT") {
+    if (!courseTeachers.some(ct => ct.course_id === payload.new.course_id && ct.teacher_id === payload.new.teacher_id)) {
+      courseTeachers.push(payload.new);
+    }
+  } else if (payload.eventType === "DELETE") {
+    courseTeachers = courseTeachers.filter(ct => !(ct.course_id === payload.old.course_id && ct.teacher_id === payload.old.teacher_id));
+  }
+  renderAssign();
+  fillSelects();
+}).catch(err => console.warn("[admin] Realtime course_teachers failed:", err));
+
+subscribeToTable("enrollments", (payload) => {
+  if (payload.eventType === "INSERT") {
+    if (!enrollments.some(e => e.student_id === payload.new.student_id && e.course_id === payload.new.course_id)) {
+      enrollments.push(payload.new);
+    }
+  } else if (payload.eventType === "DELETE") {
+    enrollments = enrollments.filter(e => !(e.student_id === payload.old.student_id && e.course_id === payload.old.course_id));
+  }
+  renderEnroll();
+  renderStats();
+  fillSelects();
+}).catch(err => console.warn("[admin] Realtime enrollments failed:", err));
+
+subscribeToTable("courses", (payload) => {
+  if (payload.eventType === "INSERT") {
+    if (!courses.some(c => c.id === payload.new.id)) courses.push(mapCourseRow(payload.new));
+  } else if (payload.eventType === "UPDATE") {
+    const idx = courses.findIndex(c => c.id === payload.new.id);
+    if (idx !== -1) courses[idx] = mapCourseRow(payload.new);
+  } else if (payload.eventType === "DELETE") {
+    courses = courses.filter(c => c.id !== payload.old.id);
+  }
+  renderCourses();
+  renderStats();
+  fillSelects();
+}).catch(err => console.warn("[admin] Realtime courses failed:", err));
+
+subscribeToTable("users", (payload) => {
+  if (payload.eventType === "INSERT") {
+    if (!users.some(u => u.id === payload.new.id)) users.push(payload.new);
+  } else if (payload.eventType === "UPDATE") {
+    const idx = users.findIndex(u => u.id === payload.new.id);
+    if (idx !== -1) users[idx] = payload.new;
+  } else if (payload.eventType === "DELETE") {
+    users = users.filter(u => u.id !== payload.old.id);
+  }
+  renderUsers();
+  renderStats();
+  fillSelects();
+}).catch(err => console.warn("[admin] Realtime users failed:", err));
+
+// Supabase rows are snake_case; IndexedDB/local state uses camelCase-ish keys
+// matching what getAll("courses") returns. Keep Realtime-patched rows consistent.
+function mapCourseRow(row) {
+  return { id: row.id, code: row.code, title: row.title, semester: row.semester, schedule: row.schedule, lecturer: row.lecturer, mode: row.mode };
+}
+</script>
+</body>
+</html>
