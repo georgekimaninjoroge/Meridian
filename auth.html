@@ -60,10 +60,11 @@ body{
 .logo{
   width:52px; height:52px; border-radius:18px;
   background:linear-gradient(135deg,#5b715b 0%,#97a991 100%);
-  display:grid; place-items:center;
+  display:flex; align-items:center; justify-content:center; overflow:hidden;
   color:white; font-weight:700; font-size:15px;
   box-shadow:0 10px 24px rgba(79,107,82,.24);
 }
+.logo img{ width:30px; height:30px; object-fit:contain; margin-left:11px; margin-top:11px; }
 .brand-title{ color:white; font-size:15px; font-weight:700; }
 .brand-sub{ color:rgba(255,255,255,.7); font-size:12px; }
 .hero{ position:absolute; left:48px; bottom:56px; z-index:5; max-width:560px; }
@@ -218,7 +219,7 @@ label{ display:block; font-size:13px; font-weight:600; color:#374151; margin-bot
   .mobile-logo{
     width:54px; height:54px; border-radius:18px;
     background:linear-gradient(135deg,#5b715b 0%,#97a991 100%);
-    display:grid; place-items:center; color:white; font-size:15px; font-weight:700;
+    display:flex; align-items:center; justify-content:center; overflow:hidden; color:white; font-size:15px; font-weight:700;
     box-shadow:0 10px 24px rgba(79,107,82,.20); flex-shrink:0;
   }
   .mobile-brand-text{ text-align:left; }
@@ -268,7 +269,7 @@ label{ display:block; font-size:13px; font-weight:600; color:#374151; margin-bot
     <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1400&auto=format&fit=crop" alt="Students studying">
     <div class="overlay"></div>
     <div class="brand">
-      <div class="logo">MU</div>
+      <div class="logo"><img src="assets/logo-white.svg" alt="Meridian"></div>
       <div>
         <div class="brand-title">Meridian University</div>
         <div class="brand-sub">Digital Learning Platform</div>
@@ -284,7 +285,7 @@ label{ display:block; font-size:13px; font-weight:600; color:#374151; margin-bot
   <div class="right">
 
     <div class="mobile-brand">
-      <div class="mobile-logo">MU</div>
+      <div class="mobile-logo"><img src="assets/logo-white.svg" alt="Meridian" style="width:28px;height:auto;display:block;"></div>
       <div class="mobile-brand-text">
         <div class="mobile-brand-title">Meridian University</div>
         <div class="mobile-brand-sub">Digital Learning Platform</div>
