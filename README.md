@@ -20,17 +20,17 @@ Meridian is built on the opposite assumption: **offline is the primary state. On
   <img src="https://placehold.co/800x400?text=Architecture+Diagram" alt="Meridian local-first architecture diagram"/>
 </p>
 
-Meridian is a local-first PWA. The core architectural decision is that **the UI never reads directly from the cloud**. All data flows through IndexedDB as the on-device source of truth. Firestore is used exclusively for sync.
+Meridian is a local-first PWA. The core architectural decision is that **the UI never reads directly from the cloud**. All data flows through IndexedDB as the on-device source of truth. Supabase is used exclusively for sync.
 
 ```
         WRONG:
-UI ─────────────────► Firestore
+UI ─────────────────► Supabase
 
         MERIDIAN:
-UI ─► IndexedDB ◄────► Firestore (sync only)
+UI ─► IndexedDB ◄────► Supabase (sync only)
 ```
 
-This means the app is fully functional the moment it loads — regardless of network state. Firestore is consulted only when online, to pull updates and push progress. The student's experience is identical online or off.
+This means the app is fully functional the moment it loads — regardless of network state. Supabase is consulted only when online, to pull updates and push progress. The student's experience is identical online or off.
 
 ---
 
@@ -42,9 +42,9 @@ This means the app is fully functional the moment it loads — regardless of net
 
 Video delivery is the hardest offline problem. Meridian solves it without a custom server or encoding pipeline.
 
-Firebase Storage natively supports HTTP Range requests. Meridian exploits this: lectures are fetched in sequential byte-range chunks, each stored as a binary blob in IndexedDB. A download interrupted by a dropped connection picks up from the exact byte it stopped at. When all chunks are present, playback is served entirely from local blobs — no network request, no buffering.
+Supabase Storage natively supports HTTP Range requests. Meridian exploits this: lectures are fetched in sequential byte-range chunks, each stored as a binary blob in IndexedDB. A download interrupted by a dropped connection picks up from the exact byte it stopped at. When all chunks are present, playback is served entirely from local blobs — no network request, no buffering.
 
-Teachers upload raw MP4. No encoding. No FFmpeg. No Cloud Functions. No waiting.
+Teachers upload raw MP4. No encoding. No FFmpeg. No waiting.
 
 ---
 
@@ -66,7 +66,7 @@ A storage guard tracks device quota in real time — warning at 80%, blocking vi
 
 ## Authentication Without a Server
 
-Session management is handled entirely on-device. On first login, Firebase issues a JWT which is stored in IndexedDB alongside the user profile and role. When the student closes the tab and reopens the app — online or offline — the Local Session Manager reads the cached token and restores the session silently.
+Session management is handled entirely on-device. On first login, Firebase Auth issues a JWT which is stored in IndexedDB alongside the user profile and role. When the student closes the tab and reopens the app — online or offline — the Local Session Manager reads the cached token and restores the session silently.
 
 Online: token is refreshed silently in the background.
 Offline: the cached token is trusted as-is.
@@ -77,9 +77,9 @@ The student is never logged out by closing the app. Logout is always explicit.
 
 ## Cross-Device Progress Sync
 
-Playback position is written to LocalStorage every 30 seconds during a lecture. When the device comes online, the Service Worker pushes the progress to Firestore. On login from a different device, Firestore restores the exact position.
+Playback position is written to LocalStorage every 30 seconds during a lecture. When the device comes online, the Service Worker pushes the progress to Supabase. On login from a different device, Supabase restores the exact position.
 
-LocalStorage for speed. Firestore as cross-device source of truth.
+LocalStorage for speed. Supabase as cross-device source of truth.
 
 ---
 
@@ -103,7 +103,7 @@ Meridian includes live class sessions powered by LiveKit. Token generation and r
 | `chunk_metadata` | IndexedDB | Byte ranges, download state |
 | `pdf_blobs` | IndexedDB | Full PDF binary |
 | `storage_usage` | IndexedDB | Quota tracking |
-| `playback_progress` | LocalStorage | Position → Firestore on sync |
+| `playback_progress` | LocalStorage | Position → Supabase on sync |
 | App shell | Cache API | HTML, CSS, JS, fonts, icons |
 
 ---
