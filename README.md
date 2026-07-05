@@ -1,11 +1,5 @@
 <p align="center">
-  <img src="assets/meridian.png" alt="Meridian Logo" width="400"/>
-</p>
-
-<h1 align="center">Meridian</h1>
-
-<p align="center">
-  <strong>A local-first LMS built for the 2.6 billion people learning on unreliable internet.</strong>
+  <img src="assets/meridian.png" alt="Meridian Logo" width="560"/>
 </p>
 
 ---
