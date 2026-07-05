@@ -1,8 +1,7 @@
-<p align="center">
+<div align="center">
   <img src="assets/meridian.png" alt="Meridian Logo" width="560"/>
-</p>
+</div>
 
----
 
 ## The Problem
 
