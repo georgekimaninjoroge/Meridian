@@ -1,0 +1,13 @@
+<svg width="100%" viewBox="0 0 680 120" role="img" xmlns="http://www.w3.org/2000/svg" style="">
+<title style="fill:rgb(0, 0, 0);stroke:none;color:rgb(11, 11, 11);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">Meridian wordmark</title>
+<desc style="fill:rgb(0, 0, 0);stroke:none;color:rgb(11, 11, 11);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">Meridian logo mark with brand green and wordmark text</desc>
+<defs>
+<linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0%" stop-color="#6b8f6e"/>
+<stop offset="100%" stop-color="#4f6b52"/>
+</linearGradient>
+</defs>
+<path d="M48.6056 107.9H4.3205C1.93435 107.9 0 105.966 0 103.58V24.284C0 20.302 4.92874 18.44 7.56158 21.427L51.8467 71.667C52.5423 72.456 52.9261 73.472 52.9261 74.524V103.58C52.9261 105.966 50.9917 107.9 48.6056 107.9Z" fill="url(#g1)" style="stroke:none;color:rgb(11, 11, 11);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+<path d="M64.807 107.9H109.092C111.478 107.9 113.413 105.966 113.413 103.58V24.284C113.413 20.302 108.484 18.44 105.851 21.427L61.5659 71.667C60.8703 72.456 60.4865 73.472 60.4865 74.524V103.58C60.4865 105.966 62.4209 107.9 64.807 107.9Z" fill="url(#g1)" style="stroke:none;color:rgb(11, 11, 11);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+<text x="140" y="88" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="62" font-weight="400" letter-spacing="-1" fill="var(--text-primary)" style="fill:rgb(11, 11, 11);stroke:none;color:rgb(11, 11, 11);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:Inter, -apple-system, BlinkMacSystemFont, sans-serif;font-size:62px;font-weight:400;text-anchor:start;dominant-baseline:auto">Meridian</text>
+</svg>
