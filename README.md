@@ -37,7 +37,7 @@ This means the app is fully functional the moment it loads — regardless of net
 ## Offline Media Delivery
 
 <p align="center">
-  <img src="https://placehold.co/800x400?text=Offline+Video+Playback+Screenshot" alt="Offline video playback from cached blobs"/>
+  <img src="https://raw.githubusercontent.com/georgekimaninjoroge/Meridian/main/assets/offline-class.png" alt="Offline video playback" width="100%"/>
 </p>
 
 Video delivery is the hardest offline problem. Meridian solves it without a custom server or encoding pipeline.
