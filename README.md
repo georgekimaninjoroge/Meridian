@@ -86,7 +86,7 @@ LocalStorage for speed. Supabase as cross-device source of truth.
 ## Live Classes
 
 <p align="center">
-  <img src="https://placehold.co/800x400?text=Live+Class+Session+Screenshot" alt="Live class session interface"/>
+  <img src="https://raw.githubusercontent.com/georgekimaninjoroge/Meridian/main/assets/live-class.png" alt="Live class session" width="100%"/>
 </p>
 
 Meridian includes live class sessions powered by LiveKit. Token generation and room management run as Supabase Edge Functions — the only server-side compute in the stack. Everything else is client-side.
