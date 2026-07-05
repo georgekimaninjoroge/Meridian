@@ -1,6 +1,7 @@
-<div align="center">
-  <img src="assets/meridian.png" alt="Meridian Logo" width="560"/>
-</div>
+<p align="center">
+  <img src="https://raw.githubusercontent.com/georgekimaninjoroge/Meridian/main/assets/meridian.png" alt="Meridian" width="100%"/>
+</p>
+
 
 
 ## The Problem
