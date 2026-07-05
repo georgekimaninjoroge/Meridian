@@ -17,7 +17,7 @@ Meridian is built on the opposite assumption: **offline is the primary state. On
 ## Architecture
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/georgekimaninjoroge/Meridian/main/assets/architecture.png" alt="Meridian architecture diagram" width="200%"/>
+  <img src="https://raw.githubusercontent.com/georgekimaninjoroge/Meridian/main/assets/architecture.png" alt="Meridian architecture diagram" width="100%"/>
 </p>
 
 Meridian is a local-first PWA. The core architectural decision is that **the UI never reads directly from the cloud**. All data flows through IndexedDB as the on-device source of truth. Supabase is used exclusively for sync.
