@@ -1,5 +1,4 @@
-| ![Meridian](https://raw.githubusercontent.com/georgekimaninjoroge/Meridian/main/assets/meridian.png) |
-|:---:|
+![Meridian](https://raw.githubusercontent.com/georgekimaninjoroge/Meridian/main/assets/meridian.png)
 
 
 
