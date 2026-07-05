@@ -1,6 +1,5 @@
-<p align="center">
-  <img src="https://raw.githubusercontent.com/georgekimaninjoroge/Meridian/main/assets/meridian.png" alt="Meridian" width="100%"/>
-</p>
+| ![Meridian](https://raw.githubusercontent.com/georgekimaninjoroge/Meridian/main/assets/meridian.png) |
+|:---:|
 
 
 
