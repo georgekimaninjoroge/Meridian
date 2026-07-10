@@ -1,0 +1,658 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Live Lecture | Meridian Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #f4f1ea;
+    --surface: rgba(255,255,255,.72);
+    --surface-solid: #ffffff;
+    --stage: #15171a;
+    --border: rgba(17,24,39,.08);
+    --accent: #617b64;
+    --accent-soft: #edf2ec;
+    --text: #111827;
+    --text-dim: #8b9098;
+    --danger: #e0392b;
+    --btn-bg: rgba(17,24,39,.05);
+    --shadow: 0 14px 40px rgba(15,23,42,.08);
+    --shadow-sm: 0 1px 2px rgba(20,20,20,.06);
+    --shadow-lg: 0 12px 32px rgba(20,20,20,.22);
+  }
+  * { box-sizing: border-box; }
+  html, body { width:100%; height:100%; }
+  body {
+    margin:0; background:var(--bg); color:var(--text); height:100vh; height:100dvh;
+    font-family: 'Inter', -apple-system, system-ui, sans-serif;
+    -webkit-font-smoothing:antialiased; overflow:hidden; padding:14px;
+  }
+
+  .viewer-shell {
+    width:100%; height:calc(100% - 0px); display:flex; flex-direction:column; overflow:hidden;
+    border-radius:24px; background:var(--surface); backdrop-filter:blur(22px);
+    border:1px solid rgba(255,255,255,.55); box-shadow:var(--shadow);
+  }
+
+  .topbar { flex-shrink:0; display:flex; align-items:center; gap:16px; padding:18px 22px; border-bottom:1px solid var(--border); }
+  .leave-btn { background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:14px; font-weight:500; padding:6px 4px; border-radius:6px; transition:color .15s; }
+  .leave-btn:hover { color:var(--text); }
+  .lecture-meta { flex:1; display:flex; flex-direction:column; gap:1px; }
+  .lecture-id { font-weight:800; font-size:16px; letter-spacing:-.02em; }
+  .role-label { font-size:12px; color:var(--text-dim); }
+
+  .app-body { flex:1; display:flex; overflow:hidden; min-height:0; }
+  .stage { flex:0 0 64%; min-width:340px; position:relative; display:flex; flex-direction:column; padding:18px; gap:10px; min-height:0; background:rgba(255,255,255,.3); }
+
+  .course-placeholder { flex:1; display:flex; align-items:center; justify-content:center; background:var(--stage); border-radius:16px; min-height:0; box-shadow:var(--shadow-sm); }
+  .course-card { text-align:center; }
+  .course-ring { width:64px; height:64px; margin:0 auto 18px; border-radius:50%; border:2px solid rgba(255,255,255,.12); display:flex; align-items:center; justify-content:center; position:relative; }
+  .course-ring::before {
+    content:''; position:absolute; inset:-2px; border-radius:50%;
+    border:2px solid transparent; border-top-color:var(--accent);
+    animation: spin 1.4s linear infinite;
+  }
+  .course-ring svg { width:24px; height:24px; color:rgba(255,255,255,.55); }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .course-name { font-size:24px; font-weight:700; color:#fff; letter-spacing:-.01em; }
+  .course-sub { color:rgba(255,255,255,.55); margin-top:6px; font-size:14px; }
+  .hidden { display:none !important; }
+
+  .lecture-layout { flex:1; display:flex; flex-direction:column; gap:10px; position:relative; min-height:0; }
+  .focus-tile { flex:1; border-radius:16px; overflow:hidden; position:relative; background:var(--stage); min-height:0; box-shadow:var(--shadow-sm); }
+  .filmstrip { display:flex; gap:10px; overflow-x:auto; height:120px; }
+  .filmstrip:empty { display:none; }
+
+  .speaking-pill { position:absolute; top:16px; left:50%; transform:translateX(-50%); background:rgba(15,17,20,.88); backdrop-filter:blur(6px); color:#fff; padding:7px 16px; border-radius:20px; font-size:13px; font-weight:600; display:flex; align-items:center; gap:8px; z-index:5; box-shadow:0 4px 14px rgba(0,0,0,.3); }
+  .speaking-pill .dot { width:7px; height:7px; border-radius:50%; background:#8fc99a; animation: pulse 1.2s infinite; }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.35; } }
+
+  .tile { position:relative; border-radius:12px; overflow:hidden; background:var(--stage); border:2px solid transparent; width:100%; height:100%; transition:border-color .2s; }
+  .tile-root { flex:1; display:flex; flex-direction:column; position:relative; min-height:0; }
+  .tile-root.hidden { display:none; }
+  .pip-stack { position:absolute; bottom:18px; right:18px; display:flex; flex-direction:column; gap:10px; z-index:6; }
+  .pip-tile { width:160px; height:120px; box-shadow:var(--shadow-lg); border-radius:12px; }
+  .pip-stack:empty { display:none; }
+  .tile video { width:100%; height:100%; object-fit:cover; display:block; }
+  .tile.speaking { border-color: var(--accent); box-shadow:0 0 0 4px var(--accent-soft); }
+  .tile .name-tag { position:absolute; bottom:10px; left:10px; background:rgba(15,17,20,.7); backdrop-filter:blur(4px); color:#fff; padding:3px 10px; border-radius:6px; font-size:12px; font-weight:600; letter-spacing:-.01em; }
+  .tile .cam-off-avatar { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:30px; font-weight:700; color:#fff; background:linear-gradient(160deg, #34373d, #212326); }
+
+  .pager { display:flex; align-items:center; justify-content:center; gap:12px; padding:4px; }
+  .pager button { background:var(--btn-bg); border:none; color:var(--text); border-radius:8px; padding:5px 12px; cursor:pointer; font-size:13px; font-weight:500; }
+
+  .resizer { width:4px; background:transparent; cursor:col-resize; transition:.15s ease; position:relative; z-index:10; flex-shrink:0; }
+  .resizer:hover, .resizer.dragging { background:rgba(97,123,100,.35); }
+
+  .sidebar { flex:1; min-width:260px; background:rgba(255,255,255,.4); border-left:1px solid var(--border); display:flex; flex-direction:column; }
+  .sidebar-tabs { flex-shrink:0; display:flex; border-bottom:1px solid var(--border); padding:0 18px; }
+  .tab-btn { background:none; border:none; color:var(--text-dim); padding:17px 4px; margin-right:20px; cursor:pointer; font-size:14px; font-weight:500; border-bottom:2px solid transparent; transition:color .15s; }
+  .tab-btn:hover { color:var(--text); }
+  .tab-btn.active { color:var(--text); font-weight:700; border-bottom-color: var(--accent); }
+  .panel { flex:1; overflow-y:auto; padding:16px 18px; }
+  .chat-panel { display:flex; flex-direction:column; }
+
+  .participant-list { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px; }
+  .participant-row { display:flex; align-items:center; gap:8px; padding:8px 8px; border-radius:8px; transition:background .15s; }
+  .participant-row.speaking { background:var(--accent-soft); }
+  .p-name { flex:1; font-size:13.5px; font-weight:500; }
+  .p-icons { display:flex; align-items:center; gap:7px; color:var(--text-dim); }
+  .p-icons svg { width:14px; height:14px; display:block; }
+  .p-icons .off-icon { color:#c0392b; }
+  .allow-btn { background:var(--accent); border:none; color:#fff; font-size:11px; font-weight:600; border-radius:6px; padding:4px 10px; cursor:pointer; box-shadow:var(--shadow-sm); }
+
+  .chat-log { list-style:none; margin:0; padding:0 0 8px; display:flex; flex-direction:column; gap:10px; }
+  .chat-log li { font-size:13.5px; line-height:1.4; }
+  .chat-log .from { font-weight:600; }
+  .chat-form { flex-shrink:0; display:flex; gap:8px; padding:16px 18px; border-top:1px solid var(--border); }
+  .chat-form input { flex:1; background:rgba(255,255,255,.6); border:1px solid var(--border); border-radius:10px; color:var(--text); padding:9px 14px; font-size:13.5px; transition:border-color .15s; }
+  .chat-form input:focus { outline:none; border-color:var(--accent); }
+  .chat-form button { background:var(--accent); border:none; color:#fff; border-radius:10px; padding:9px 18px; cursor:pointer; font-weight:600; font-size:13.5px; transition:filter .15s; }
+  .chat-form button:hover { filter:brightness(1.08); }
+
+  .controls { flex-shrink:0; display:flex; gap:14px; justify-content:center; align-items:center; padding:18px; border-top:1px solid var(--border); }
+  .ctrl-btn { position:relative; display:flex; align-items:center; justify-content:center; background:var(--btn-bg); border:none; width:46px; height:46px; border-radius:50%; color:var(--text); cursor:pointer; font-size:16px; transition:background .15s, transform .1s; box-shadow:var(--shadow-sm); }
+  .ctrl-btn:hover { transform:translateY(-1px); }
+  .ctrl-btn.active-on { background:var(--accent); color:#fff; }
+  .ctrl-btn.locked { opacity:.85; }
+  .ctrl-btn.locked::after {
+    content:''; position:absolute; left:8px; right:8px; top:50%;
+    border-top:2.5px solid var(--accent); transform:rotate(-45deg);
+  }
+  .ctrl-btn svg.icon { display:block; }
+  @media (max-width: 768px) {
+    body { padding:8px; }
+    .viewer-shell { border-radius:18px; }
+    .topbar { padding:12px 16px; gap:10px; }
+    .leave-btn { font-size:13px; }
+    .lecture-id { font-size:14px; }
+
+    .app-body { flex-direction:column; min-height:0; }
+    .stage { flex:1 1 auto; min-width:0; min-height:0; padding:10px 10px 6px; gap:6px; }
+    .course-name { font-size:19px; }
+    .course-sub { font-size:13px; }
+    .course-ring { width:52px; height:52px; margin-bottom:14px; }
+    .course-ring svg { width:20px; height:20px; }
+
+    .pip-stack { bottom:10px; right:10px; gap:6px; }
+    .pip-tile { width:96px; height:72px; }
+    .filmstrip { height:84px; }
+
+    .resizer { display:none; }
+    .sidebar {
+      width:100%; flex:0 0 auto; min-width:0; height:34vh; min-height:200px;
+      border-left:none; border-top:1px solid var(--border);
+    }
+    .sidebar-tabs { padding:0 12px; }
+    .tab-btn { padding:11px 4px; margin-right:16px; font-size:13.5px; }
+    .panel { padding:10px 12px; }
+    .chat-form { padding:10px 12px; }
+
+    .controls { padding:12px; gap:18px; }
+    .ctrl-btn { width:50px; height:50px; }
+  }
+</style>
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16x16.png">
+  <link rel="manifest" href="assets/icons/site.webmanifest">
+</head>
+<body>
+
+  <div class="viewer-shell" id="viewerShell">
+    <header class="topbar">
+      <button id="leaveBtn" class="leave-btn">&lsaquo; Leave</button>
+      <div class="lecture-meta">
+        <span id="lectureId" class="lecture-id"></span>
+        <span id="roleLabel" class="role-label"></span>
+      </div>
+    </header>
+
+    <main class="app-body">
+      <section id="stage" class="stage">
+        <div id="coursePlaceholder" class="course-placeholder">
+          <div class="course-card">
+            <div class="course-ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+            <div class="course-name" id="courseName">DBT211 — Week 9</div>
+            <div class="course-sub" id="courseSub">Waiting for the lesson to start…</div>
+          </div>
+        </div>
+        <div id="tileRoot" class="tile-root hidden">
+          <div id="speakingPill" class="speaking-pill hidden"><span class="dot"></span><span id="speakingName"></span></div>
+        </div>
+      </section>
+
+      <div class="resizer" id="resizer"></div>
+
+      <aside class="sidebar">
+        <div class="sidebar-tabs">
+          <button class="tab-btn active" data-tab="participants">Participants <span id="participantCount"></span></button>
+        <button class="tab-btn" data-tab="chat">Chat</button>
+      </div>
+
+      <div id="participantsPanel" class="panel">
+        <ul id="participantList" class="participant-list"></ul>
+      </div>
+
+      <div id="chatPanel" class="panel chat-panel hidden">
+        <ul id="chatLog" class="chat-log"></ul>
+      </div>
+      <form id="chatForm" class="chat-form hidden">
+        <input id="chatInput" placeholder="Message everyone…" autocomplete="off" />
+        <button type="submit">Send</button>
+      </form>
+      </aside>
+    </main>
+
+    <footer class="controls">
+      <button id="micBtn" class="ctrl-btn" title="Mute / unmute">
+        <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a4 4 0 0 0-4 4v6a4 4 0 0 0 8 0V5a4 4 0 0 0-4-4z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="18" x2="12" y2="22"/></svg>
+      </button>
+      <button id="camBtn" class="ctrl-btn locked" title="Tap to request camera">
+        <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+      </button>
+      <button id="shareBtn" class="ctrl-btn locked" title="Tap to request screen share">
+        <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      </button>
+    </footer>
+  </div>
+
+<script>
+  window.LIVEKIT_WS_URL = 'wss://meridian-digital-learning-evlzr1xl.livekit.cloud';
+</script>
+
+<script>
+// ===================== SIDEBAR =====================
+// Participants tab default; Chat is a second tab, not the only sidebar mode.
+const Sidebar = (() => {
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  const panels = { participants: document.getElementById('participantsPanel'), chat: document.getElementById('chatPanel') };
+  const listEl = document.getElementById('participantList');
+  const countEl = document.getElementById('participantCount');
+  const chatLog = document.getElementById('chatLog');
+  const chatForm = document.getElementById('chatForm');
+  const chatInput = document.getElementById('chatInput');
+
+  tabBtns.forEach(btn => {
+    btn.onclick = () => {
+      tabBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      Object.entries(panels).forEach(([key, el]) => el.classList.toggle('hidden', key !== btn.dataset.tab));
+      chatForm.classList.toggle('hidden', btn.dataset.tab !== 'chat');
+    };
+  });
+
+  function renderParticipants(participants, { isTeacherView, onAllow }) {
+    countEl.textContent = `(${participants.length})`;
+    listEl.innerHTML = '';
+
+    participants.forEach(p => {
+      const li = document.createElement('li');
+      li.className = 'participant-row' + (p.isSpeaking ? ' speaking' : '');
+
+      const name = document.createElement('span');
+      name.className = 'p-name';
+      name.textContent = (p.name || p.identity) + (p.isLocal ? ' (you)' : '') + (p.isTeacher ? ' — Teacher' : '');
+      li.appendChild(name);
+
+      const icons = document.createElement('span');
+      icons.className = 'p-icons';
+      const micIcon = p.micOn
+        ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a4 4 0 0 0-4 4v6a4 4 0 0 0 8 0V5a4 4 0 0 0-4-4z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="18" x2="12" y2="22"/></svg>`
+        : `<svg class="off-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a4 4 0 0 0-4 4v6a4 4 0 0 0 8 0V5a4 4 0 0 0-4-4z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="3" y1="3" x2="21" y2="21"/></svg>`;
+      const camIcon = p.camOn
+        ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>`
+        : `<svg class="off-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/><line x1="1" y1="5" x2="16" y2="19"/></svg>`;
+      icons.innerHTML = micIcon + camIcon;
+      li.appendChild(icons);
+
+      if (p.requested && isTeacherView) {
+        const btn = document.createElement('button');
+        btn.className = 'allow-btn';
+        btn.textContent = `Allow ${p.requested}`;
+        btn.onclick = () => onAllow(p);
+        li.appendChild(btn);
+      } else if (p.requested) {
+        const tag = document.createElement('span');
+        tag.textContent = '⏳';
+        li.appendChild(tag);
+      }
+
+      listEl.appendChild(li);
+    });
+  }
+
+  function appendChat(fromName, text) {
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="from">${fromName}:</span> ${text}`;
+    chatLog.appendChild(li);
+    chatLog.scrollTop = chatLog.scrollHeight;
+  }
+
+  function onSend(handler) {
+    chatForm.onsubmit = (e) => {
+      e.preventDefault();
+      const text = chatInput.value.trim();
+      if (!text) return;
+      handler(text);
+      chatInput.value = '';
+    };
+  }
+
+  return { renderParticipants, appendChat, onSend };
+})();
+</script>
+
+<script>
+// ===================== LAYOUTS =====================
+// Lecture-hall model: ONE big stage shows the teacher (or course code if
+// their cam's off). Students never get a stage tile just for being in the
+// room — only after the teacher approves their raised hand do they show up,
+// and even then only in a small strip below the stage, not the main view.
+// This is what keeps it sane at 100 students instead of 100 video blocks.
+const Layouts = (() => {
+  const tileRoot = document.getElementById('tileRoot');
+  const coursePlaceholder = document.getElementById('coursePlaceholder');
+  const courseSub = document.getElementById('courseSub');
+  const speakingPill = document.getElementById('speakingPill');
+  const speakingName = document.getElementById('speakingName');
+
+  function setMode() { /* kept for init() compatibility; always single-stage now */ }
+  function setActiveSpeaker() { /* unused: speaking state read live off each snapshot */ }
+  function setPinned() { /* unused in single-stage model */ }
+
+  // On stage = the teacher, or a student the teacher has approved to publish.
+  function isOnStage(p) { return p.isTeacher || p.canPublish; }
+
+  function render(participants) {
+    const teacher = participants.find(p => p.isTeacher);
+    const onStage = participants.filter(isOnStage);
+    const teacherHasVideo = teacher && teacher.videoTrack && !teacher.videoTrack.isMuted;
+
+    coursePlaceholder.classList.toggle('hidden', !!teacherHasVideo);
+    tileRoot.classList.toggle('hidden', !teacherHasVideo);
+
+    applySubscriptions(onStage, participants.filter(p => !isOnStage(p)));
+    updateSpeakingPill(participants);
+
+    if (!teacherHasVideo) {
+      courseSub.textContent = teacher ? 'Waiting for the lesson to start…' : 'Waiting for the teacher to join…';
+      return;
+    }
+
+    tileRoot.innerHTML = '';
+    tileRoot.appendChild(speakingPill);
+
+    const focusWrap = document.createElement('div');
+    focusWrap.className = 'focus-tile';
+    tileRoot.appendChild(focusWrap);
+    focusWrap.appendChild(buildTile(teacher));
+
+    const approvedStudents = onStage.filter(p => !p.isTeacher);
+    const pipStack = document.createElement('div');
+    pipStack.className = 'pip-stack';
+    tileRoot.appendChild(pipStack);
+    approvedStudents.forEach(p => {
+      const pip = buildTile(p);
+      pip.classList.add('pip-tile');
+      pipStack.appendChild(pip);
+    });
+  }
+
+  // Floating pill: shows whoever is actively talking right now, gone the
+  // instant nobody is.
+  function updateSpeakingPill(participants) {
+    const speaker = participants.find(p => p.isSpeaking);
+    if (speaker) {
+      speakingName.textContent = speaker.isLocal ? `${speaker.name} (you)` : speaker.name;
+      speakingPill.classList.remove('hidden');
+    } else {
+      speakingPill.classList.add('hidden');
+    }
+  }
+
+  function buildTile(p) {
+    const div = document.createElement('div');
+    div.className = 'tile' + (p.isSpeaking ? ' speaking' : '');
+    div.dataset.sid = p.sid;
+
+    if (p.videoTrack && !p.videoTrack.isMuted) {
+      div.appendChild(p.videoTrack.attach());
+    } else {
+      const avatar = document.createElement('div');
+      avatar.className = 'cam-off-avatar';
+      avatar.textContent = (p.name || p.identity || '?').slice(0, 1).toUpperCase();
+      div.appendChild(avatar);
+    }
+
+    const tag = document.createElement('div');
+    tag.className = 'name-tag';
+    tag.textContent = (p.name || p.identity) + (p.isLocal ? ' (you)' : '');
+    div.appendChild(tag);
+    return div;
+  }
+
+  // Only ever subscribe to video for people on stage. The silent majority
+  // of students stay unsubscribed — this is what makes "100 students" not
+  // cost 100 video streams.
+  function applySubscriptions(onStage, offStage) {
+    offStage.forEach(p => { if (p.videoPublication?.isSubscribed) p.videoPublication.setSubscribed(false); });
+    onStage.forEach(p => { if (p.videoPublication && !p.videoPublication.isSubscribed) p.videoPublication.setSubscribed(true); });
+  }
+
+  return { setMode, setActiveSpeaker, setPinned, render };
+})();
+</script>
+
+<script>
+// ===================== ROOM =====================
+const qs = new URLSearchParams(location.search);
+const lectureId = qs.get('lectureId');
+const role = qs.get('role') || 'student';
+const isTeacher = role === 'teacher';
+
+// TODO: replace with your real auth — Firebase Auth currentUser, your session, etc.
+function getCurrentUser() {
+  const uid = qs.get('uid') || `${role}-${Math.random().toString(36).slice(2, 8)}`;
+  // name source priority: ?name= query param -> cached session (JS/session.js) -> uid fallback
+  let name = qs.get('name');
+  if (!name) {
+    try {
+      const cached = JSON.parse(localStorage.getItem('meridian_session') || 'null');
+      name = cached?.displayName || cached?.name || cached?.portalId || null;
+    } catch {}
+  }
+  if (!name) name = uid;
+  return { uid, name };
+}
+
+let room;
+// Teachers are always approved for everything. Students start with mic free
+// (server-granted canPublish covers audio for everyone already); cam and
+// screen-share need a per-control request + teacher approval first.
+const requestedSet = new Map(); // identity -> 'camera' | 'screen share', pending requests
+let camApproved = isTeacher;
+let shareApproved = isTeacher;
+
+document.getElementById('lectureId').textContent = lectureId;
+document.getElementById('roleLabel').textContent = isTeacher ? 'Teaching this lecture' : 'Joined as student';
+
+const SUPABASE_URL = "https://fzkpmptsnnkafaaeqhnf.supabase.co";
+const SUPABASE_KEY = "sb_publishable_Sw15oAmzk8DDUiwOe8mU8A_g-ZHg5EO";
+
+async function fetchToken() {
+  const { uid, name } = getCurrentUser();
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/livekit-token`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'apikey': SUPABASE_KEY,
+    },
+    body: JSON.stringify({ roomName: `${lectureId}_live`, identity: uid, name, role }),
+  });
+  if (!res.ok) throw new Error('token fetch failed');
+  return res.json();
+}
+
+async function grantPermission(identity, allow) {
+  await fetch(`${SUPABASE_URL}/functions/v1/livekit-permission-grant`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'apikey': SUPABASE_KEY,
+    },
+    body: JSON.stringify({ roomName: `${lectureId}_live`, identity, allow }),
+  });
+}
+
+function buildParticipantSnapshot() {
+  const all = [room.localParticipant, ...Array.from(room.remoteParticipants.values())];
+  return all.map(p => {
+    const pubs = [...(p.trackPublications?.values() || [])];
+    const camPub = pubs.find(t => t.kind === 'video' && t.source !== LivekitClient.Track.Source.ScreenShare);
+    const sharePub = pubs.find(t => t.source === LivekitClient.Track.Source.ScreenShare);
+    const audioPub = p.audioTrackPublications?.[0] || pubs.find(t => t.kind === 'audio');
+    // Screen share takes priority on the main stage when both are live.
+    const videoPub = (sharePub && !sharePub.isMuted) ? sharePub : camPub;
+    return {
+      sid: p.sid,
+      identity: p.identity,
+      name: p.name || p.identity,
+      isLocal: p === room.localParticipant,
+      isTeacher: p.attributes?.role === 'teacher',
+      canPublish: !!p.permissions?.canPublish,
+      videoTrack: videoPub?.track,
+      audioTrack: audioPub?.track,
+      videoPublication: videoPub,
+      isSharingScreen: !!sharePub && !sharePub.isMuted,
+      micOn: !!audioPub && !audioPub.isMuted,
+      camOn: !!videoPub && !videoPub.isMuted,
+      requested: requestedSet.get(p.identity) || null, // 'camera' | 'screen share' | null
+      isSpeaking: room.activeSpeakers?.some(sp => sp.sid === p.sid) || false,
+    };
+  });
+}
+
+function rerender() {
+  const participants = buildParticipantSnapshot();
+  Layouts.render(participants);
+  Sidebar.renderParticipants(participants, {
+    isTeacherView: isTeacher,
+    onAllow: async (p) => {
+      await grantPermission(p.identity, true);
+      requestedSet.delete(p.identity);
+      room.localParticipant.publishData(
+        new TextEncoder().encode(JSON.stringify({ type: 'permission-granted' })),
+        { reliable: true, topic: 'permission', destinationIdentities: [p.identity] }
+      );
+      rerender();
+    },
+  });
+}
+window.Room = { rerender };
+
+// Reflects current local approval state onto the cam/share button styling.
+// Mic is never locked — it's always clickable, just starts off (muted).
+function refreshControlLocks() {
+  document.getElementById('camBtn').classList.toggle('locked', !camApproved);
+  document.getElementById('shareBtn').classList.toggle('locked', !shareApproved);
+}
+
+// Student taps a locked cam/share button: send the request, don't publish yet.
+function sendControlRequest(kind) {
+  room.localParticipant.publishData(
+    new TextEncoder().encode(JSON.stringify({ kind })),
+    { reliable: true, topic: 'control-request' }
+  );
+}
+
+async function init() {
+  const { token } = await fetchToken();
+
+  room = new LivekitClient.Room({
+    adaptiveStream: true,
+    dynacast: true,
+    publishDefaults: { simulcast: true },
+  });
+
+  room.on(LivekitClient.RoomEvent.ActiveSpeakersChanged, () => rerender());
+  room.on(LivekitClient.RoomEvent.ParticipantConnected, () => rerender());
+  room.on(LivekitClient.RoomEvent.ParticipantDisconnected, () => rerender());
+  room.on(LivekitClient.RoomEvent.TrackSubscribed, () => rerender());
+  room.on(LivekitClient.RoomEvent.TrackUnsubscribed, () => rerender());
+  room.on(LivekitClient.RoomEvent.TrackMuted, () => rerender());
+  room.on(LivekitClient.RoomEvent.TrackUnmuted, () => rerender());
+  room.on(LivekitClient.RoomEvent.ParticipantAttributesChanged, () => rerender());
+  room.on(LivekitClient.RoomEvent.LocalTrackPublished, () => rerender());
+  room.on(LivekitClient.RoomEvent.LocalTrackUnpublished, () => rerender());
+
+  room.on(LivekitClient.RoomEvent.ParticipantPermissionsChanged, (perms, participant) => {
+    if (participant === room.localParticipant) {
+      camApproved = isTeacher || !!perms.canPublish;
+      shareApproved = isTeacher || !!perms.canPublish;
+      refreshControlLocks();
+    }
+  });
+
+  room.on(LivekitClient.RoomEvent.ConnectionQualityChanged, (quality, participant) => {
+    if (participant === room.localParticipant && quality === 'poor') {
+      console.warn('Your connection is poor — others will see degraded video of you.');
+    }
+  });
+
+  room.on(LivekitClient.RoomEvent.DataReceived, (payload, participant, kind, topic) => {
+    const msg = JSON.parse(new TextDecoder().decode(payload));
+    if (topic === 'chat') {
+      Sidebar.appendChat(participant?.name || participant?.identity || 'Unknown', msg.text);
+    } else if (topic === 'control-request' && isTeacher) {
+      requestedSet.set(participant.identity, msg.kind);
+      rerender();
+    } else if (topic === 'permission' && msg.type === 'permission-granted') {
+      camApproved = true;
+      shareApproved = true;
+      refreshControlLocks();
+    }
+  });
+
+  try {
+    const meta = JSON.parse(room.metadata || '{}');
+    Layouts.setMode(meta.type === 'lecture' ? 'lecture' : 'conference');
+  } catch { Layouts.setMode('lecture'); }
+
+  await room.connect(window.LIVEKIT_WS_URL, token);
+
+  // role attribute now comes baked into the JWT itself (server-side), so
+  // it's visible to every participant the instant they join.
+  // Mic starts OFF but is never locked — anyone can turn it on/off freely.
+  refreshControlLocks();
+
+  rerender();
+}
+
+document.getElementById('micBtn').onclick = async () => {
+  const on = !room.localParticipant.isMicrophoneEnabled;
+  await room.localParticipant.setMicrophoneEnabled(on);
+  document.getElementById('micBtn').classList.toggle('active-on', on);
+};
+
+document.getElementById('camBtn').onclick = async () => {
+  if (!camApproved) { sendControlRequest('camera'); return; }
+  const on = !room.localParticipant.isCameraEnabled;
+  await room.localParticipant.setCameraEnabled(on);
+  document.getElementById('camBtn').classList.toggle('active-on', on);
+  rerender();
+};
+
+document.getElementById('shareBtn').onclick = async () => {
+  if (!shareApproved) { sendControlRequest('screen share'); return; }
+  await room.localParticipant.setScreenShareEnabled(!room.localParticipant.isScreenShareEnabled);
+  document.getElementById('shareBtn').classList.toggle('active-on', room.localParticipant.isScreenShareEnabled);
+  rerender();
+};
+
+document.getElementById('leaveBtn').onclick = () => { room?.disconnect(); location.href = '/'; };
+
+Sidebar.onSend((text) => {
+  room.localParticipant.publishData(
+    new TextEncoder().encode(JSON.stringify({ text })),
+    { reliable: true, topic: 'chat' }
+  );
+  Sidebar.appendChat(room.localParticipant.name + ' (you)', text);
+});
+
+init().catch(err => console.error('room init failed', err));
+
+// Adjustable split between video stage and sidebar, same pattern as media.html.
+const resizer = document.getElementById('resizer');
+const stageEl = document.getElementById('stage');
+const viewerShell = document.getElementById('viewerShell');
+let isDraggingSplit = false;
+
+resizer.addEventListener('mousedown', () => {
+  isDraggingSplit = true;
+  resizer.classList.add('dragging');
+  document.body.style.userSelect = 'none';
+});
+document.addEventListener('mouseup', () => {
+  isDraggingSplit = false;
+  resizer.classList.remove('dragging');
+  document.body.style.userSelect = '';
+});
+document.addEventListener('mousemove', (e) => {
+  if (!isDraggingSplit) return;
+  const shellRect = viewerShell.getBoundingClientRect();
+  const newStageWidth = ((e.clientX - shellRect.left) / shellRect.width) * 100;
+  if (newStageWidth < 35 || newStageWidth > 80) return;
+  stageEl.style.flex = `0 0 ${newStageWidth}%`;
+});
+</script>
+
+</body>
+</html>
