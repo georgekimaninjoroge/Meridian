@@ -734,7 +734,7 @@ let COURSE_CODES = [];
 const session = await requireSession();
 
 // Sync Supabase \u2192 IndexedDB (background, non-blocking)
-syncFromSupabase().catch(err => console.warn("[index] Supabase sync failed:", err));
+await syncFromSupabase().catch(err => console.warn("[index] Supabase sync failed:", err));
 
 window._meridianSession = session; // expose for settings modal
 
@@ -901,9 +901,13 @@ function modeLabel(mode) {
 // Renders the "My Courses" grid from IndexedDB courses + sets COURSE_CODES for nav
 async function renderCourseGrid() {
   const { getAll } = await import("./JS/db.js");
-  const { fetchEnrollments } = await import("./JS/supabase.js");
   const allCourses = await getAll("courses");
-  const enrollments = await fetchEnrollments().catch(() => []);
+  // Read enrollments from IDB (offline-safe); fallback to Supabase only if empty
+  let enrollments = await getAll("enrollments").catch(() => []);
+  if (!enrollments.length) {
+    const { fetchEnrollments } = await import("./JS/supabase.js");
+    enrollments = await fetchEnrollments().catch(() => []);
+  }
   const myCourseIds = new Set(enrollments.filter(e => e.student_id === session.uid).map(e => e.course_id));
   const courses = allCourses.filter(c => myCourseIds.has(c.id));
   const grid = document.querySelector(".course-grid");
