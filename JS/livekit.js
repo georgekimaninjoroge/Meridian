@@ -22,9 +22,12 @@
  *   const room = await joinLecture(lectureId, studentUid, studentName, "student");
  */
 
-const SUPABASE_URL = "https://fzkpmptsnnkafaaeqhnf.supabase.co";
-const SUPABASE_KEY = "sb_publishable_Sw15oAmzk8DDUiwOe8mU8A_g-ZHg5EO";
-const LIVEKIT_WS_URL = "wss://meridian-digital-learning-evlzr1xl.livekit.cloud";
+import { SUPABASE_URL, getConfig } from "./config.js";
+
+async function getLiveKitConfig() {
+  const session = JSON.parse(localStorage.getItem("meridian_session") || "{}");
+  return getConfig(session._idToken || "").catch(() => ({ supabaseKey: "", livekitWsUrl: "" }));
+}
 
 let _Room, _RoomEvent, _Track, _connectModule;
 async function loadLiveKitClient() {
@@ -36,12 +39,13 @@ async function loadLiveKitClient() {
 }
 
 async function callEdgeFunction(name, body) {
+  const { supabaseKey } = await getLiveKitConfig();
   const res = await fetch(`${SUPABASE_URL}/functions/v1/${name}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${SUPABASE_KEY}`,
-      "apikey": SUPABASE_KEY,
+      "Authorization": `Bearer ${supabaseKey}`,
+      "apikey": supabaseKey,
     },
     body: JSON.stringify(body),
   });
@@ -67,7 +71,8 @@ async function connectToRoom(roomName, identity, name, role) {
     dynacast: true,        // saves upload bandwidth when no one's watching a track
   });
 
-  await room.connect(LIVEKIT_WS_URL, token);
+  const { livekitWsUrl } = await getLiveKitConfig();
+  await room.connect(livekitWsUrl, token);
   return room;
 }
 

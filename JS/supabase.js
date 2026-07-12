@@ -13,16 +13,18 @@
  */
 
 import { put, count } from "./db.js";
+import { SUPABASE_URL, getConfig } from "./config.js";
 
-// ─── Config ──────────────────────────────────────────────────────────────────
-const SUPABASE_URL = "https://fzkpmptsnnkafaaeqhnf.supabase.co";
-const SUPABASE_KEY = "sb_publishable_Sw15oAmzk8DDUiwOe8mU8A_g-ZHg5EO";
-
-const HEADERS = {
-  "apikey":        SUPABASE_KEY,
-  "Authorization": `Bearer ${SUPABASE_KEY}`,
-  "Content-Type":  "application/json"
-};
+// ─── Config — fetched from get-config edge function ─────────────────────────
+async function getHeaders() {
+  const session = JSON.parse(localStorage.getItem("meridian_session") || "{}");
+  const { supabaseKey } = await getConfig(session._idToken || "").catch(() => ({ supabaseKey: "" }));
+  return {
+    "apikey":        supabaseKey,
+    "Authorization": `Bearer ${supabaseKey}`,
+    "Content-Type":  "application/json"
+  };
+}
 
 // ─── Realtime client (separate from the REST fetch() calls above) ───────────
 // Lazily created — only loaded when a page actually subscribes to changes,
@@ -31,7 +33,11 @@ let _realtimeClientPromise = null;
 async function getRealtimeClient() {
   if (!_realtimeClientPromise) {
     _realtimeClientPromise = import("https://esm.sh/@supabase/supabase-js@2")
-      .then(({ createClient }) => createClient(SUPABASE_URL, SUPABASE_KEY));
+      .then(async ({ createClient }) => {
+      const session = JSON.parse(localStorage.getItem("meridian_session") || "{}");
+      const { supabaseKey } = await getConfig(session._idToken || "").catch(() => ({ supabaseKey: "" }));
+      return createClient(SUPABASE_URL, supabaseKey);
+    });
   }
   return _realtimeClientPromise;
 }
@@ -58,7 +64,7 @@ export async function subscribeToTable(table, onChange) {
 async function fetchTable(table) {
   const res = await fetch(
     `${SUPABASE_URL}/rest/v1/${table}?select=*`,
-    { headers: HEADERS }
+    { headers: await getHeaders() }
   );
   if (!res.ok) throw new Error(`Supabase fetch failed [${table}]: ${res.status}`);
   return res.json();
@@ -141,7 +147,7 @@ export async function uploadFile(file, courseId, weekNumber, kind) {
     `${SUPABASE_URL}/storage/v1/object/sign/lecture-media/${path}`,
     {
       method: "POST",
-      headers: HEADERS,
+      headers: await getHeaders(),
       body: JSON.stringify({ expiresIn: 31536000 })
     }
   );
@@ -271,7 +277,7 @@ export async function upsertCourse(c) {
 }
 
 export async function deleteCourse(id) {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/courses?id=eq.${id}`, { method: "DELETE", headers: HEADERS });
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/courses?id=eq.${id}`, { method: "DELETE", headers: await getHeaders() });
   if (!res.ok) throw new Error(await res.text());
   const { deleteById } = await import("./db.js");
   await deleteById("courses", id);
@@ -293,7 +299,7 @@ export async function assignTeacher(courseId, teacherId) {
 
 export async function unassignTeacher(courseId, teacherId) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/course_teachers?course_id=eq.${courseId}&teacher_id=eq.${teacherId}`, {
-    method: "DELETE", headers: HEADERS
+    method: "DELETE", headers: await getHeaders()
   });
   if (!res.ok) throw new Error(await res.text());
 }
@@ -314,7 +320,7 @@ export async function enrollStudent(studentId, courseId) {
 
 export async function unenrollStudent(studentId, courseId) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/enrollments?student_id=eq.${studentId}&course_id=eq.${courseId}`, {
-    method: "DELETE", headers: HEADERS
+    method: "DELETE", headers: await getHeaders()
   });
   if (!res.ok) throw new Error(await res.text());
 }

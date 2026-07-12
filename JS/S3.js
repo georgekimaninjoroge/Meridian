@@ -29,11 +29,12 @@
  */
 
 import { getById, put, deleteById, getByIndex } from "./db.js";
+import { SUPABASE_URL, getConfig } from "./config.js";
 import { getSession } from "./session.js";
 
 // ─── Config — swap these to change backend ────────────────────────────────────
-const SUPABASE_URL  = "https://fzkpmptsnnkafaaeqhnf.supabase.co";
-const SUPABASE_KEY  = "sb_publishable_Sw15oAmzk8DDUiwOe8mU8A_g-ZHg5EO";
+
+
 const PROXY_BASE    = `${SUPABASE_URL}/functions/v1/media-proxy`;
 const UPLOAD_BASE   = `${SUPABASE_URL}/functions/v1/media-upload`;
 
@@ -42,15 +43,15 @@ const UPLOAD_CHUNK_SIZE = 5 * 1024 * 1024; // 5 MB
 
 // ─── Auth header ──────────────────────────────────────────────────────────────
 async function authHeader() {
-  // Get Firebase ID token from the active session
   const { getAuth } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js");
   const auth  = getAuth();
   const user  = auth.currentUser;
   if (!user) throw new Error("Not authenticated");
   const token = await user.getIdToken();
+  const { supabaseKey } = await getConfig(token).catch(() => ({ supabaseKey: "" }));
   return {
     Authorization: `Bearer ${token}`,
-    apikey:        SUPABASE_KEY,
+    apikey:        supabaseKey,
   };
 }
 

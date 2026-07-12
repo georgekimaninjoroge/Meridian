@@ -1,5 +1,5 @@
 // sw.js - Complete offline-first service worker
-const CACHE_NAME = "meridian-v1.1750"; // bumped — SW now bypasses all cross-origin requests entirely
+const CACHE_NAME = "meridian-v1.1760";
 
 const FILES_TO_CACHE = [
   "/",
@@ -9,15 +9,30 @@ const FILES_TO_CACHE = [
   "/media.html",
   "/teacher.html",
   "/teacher_course.html",
+  "/admin.html",
+  "/settings.html",
+  "/live.html",
   "/manifest.json",
-  "/test_notes.pdf",
-  "/test.mp4",
+  // JS
   "/JS/session.js",
+  "/JS/config.js",
+  "/JS/supabase.js",
+  "/JS/livekit.js",
+  "/JS/S3.js",
   "/JS/offline-media.js",
   "/JS/db.js",
   "/JS/cache-janitor.js",
   "/JS/storage-monitor.js",
-  "/JS/sw.js",
+  // Assets
+  "/assets/logo.svg",
+  "/assets/logo-white.svg",
+  "/assets/icons/favicon-32x32.png",
+  "/assets/icons/favicon-16x16.png",
+  "/assets/icons/apple-touch-icon.png",
+  "/assets/icons/android-chrome-192x192.png",
+  "/assets/icons/android-chrome-512x512.png",
+  "/assets/icons/icon-192.png",
+  "/assets/icons/icon-512.png",
   // Plyr
   "/dist/plyr/plyr.min.css",
   "/dist/plyr/plyr.min.js",
@@ -26,6 +41,8 @@ const FILES_TO_CACHE = [
   "/dist/pdfjs/pdf.min.mjs",
   "/dist/pdfjs/pdf.worker.min.mjs",
   "/dist/pdfjs/pdf_viewer.css",
+  // Auth background
+  "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1400&auto=format&fit=crop",
 ];
 
 // Install - pre-cache everything before activating

@@ -31,22 +31,13 @@ import {
   browserLocalPersistence
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirebaseConfig, getConfig, clearConfig } from "./config.js";
 
-// ─── Firebase config ─────────────────────────────────────────────────────────
-const firebaseConfig = {
-  apiKey: "AIzaSyCXjaD4yArHvjzv1MtUbkmRUxcsFGg26fA",
-  authDomain: "meridian-university-3b199.firebaseapp.com",
-  projectId: "meridian-university-3b199",
-  storageBucket: "meridian-university-3b199.firebasestorage.app",
-  messagingSenderId: "179714904881",
-  appId: "1:179714904881:web:f6fed2c0c99fc54a479610"
-};
-
+// ─── Firebase config — fetched from edge function ────────────────────────────
+const firebaseConfig = await getFirebaseConfig();
 const app  = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db   = getFirestore(app);
-
-// Survive PC restart, browser close, everything
 await setPersistence(auth, browserLocalPersistence);
 
 const SESSION_KEY = "meridian_session";
