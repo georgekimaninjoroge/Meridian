@@ -45,7 +45,7 @@ Deno.serve(async (req: Request) => {
   };
 
   if (authed) {
-    config.supabaseKey  = Deno.env.get("SUPABASE_ANON_KEY");
+    config.supabaseKey  = Deno.env.get("SB_ANON_KEY");
     config.livekitWsUrl = Deno.env.get("LIVEKIT_WS_URL");
   }
 
