@@ -2,15 +2,6 @@
   <img src="https://raw.githubusercontent.com/georgekimaninjoroge/Meridian/main/assets/meridian.png" alt="Meridian" width="100%"/>
 </p>
 
-<p align="center">
-  <a href="https://meridianlms.netlify.app">meridianlms.netlify.app</a> &nbsp;·&nbsp;
-  Apache 2.0 &nbsp;·&nbsp;
-  Vanilla JS + TypeScript &nbsp;·&nbsp;
-  No build step
-</p>
-
----
-
 ## The Problem
 
 Canvas, Moodle, and Google Classroom share one fatal assumption: the network is always there. The moment it drops, they stop working. No fallback, no queue, no recovery.
@@ -188,7 +179,7 @@ Teachers create CATs, assignments, and quizzes per course. Assessment data lives
 
 ## Realtime Sync
 
-When online, Supabase Realtime pushes postgres_changes events via WebSocket. Each event triggers a write into IndexedDB and a UI re-render. The UI still reads only from IndexedDB. Tables covered: courses, lectures, enrollments, assignments, and assessments. The Supabase JS client is lazily imported so only pages that need live updates load it.
+`supabase.js` exposes `subscribeToTable(table, onChange)`, a thin wrapper over the Supabase Realtime `postgres_changes` subscription. Used selectively for enrollment updates and live attendance. The Supabase JS client is lazily imported so only pages that subscribe to live changes load it.
 
 ---
 
@@ -211,15 +202,17 @@ When online, Supabase Realtime pushes postgres_changes events via WebSocket. Eac
 
 ## Edge Functions
 
-Seven Deno functions run on Supabase Edge. All verify Firebase JWTs manually since Supabase's built-in check rejects Firebase tokens. Responsibilities:
+| Function | Auth | Role |
+|---|---|---|
+| `get-config` | Optional Firebase JWT | Returns Firebase config publicly and Supabase anon key when authenticated |
+| `media-upload` | Firebase JWT | Receives 5 MB chunks, writes to Supabase Storage and DB |
+| `media-proxy` | Firebase JWT + enrollment check | Gates chunk access and streams bytes to SW |
+| `livekit-token` | Firebase JWT | Issues scoped LiveKit participant token |
+| `livekit-start-room` | Firebase JWT (teacher) | Creates room and configures Auto Egress recording |
+| `livekit-egress-webhook` | LiveKit webhook secret | Writes finished recording asset ID to lecture record |
+| `livekit-auto-start` | Internal | Scheduled room lifecycle management |
 
-- **Config delivery** — returns Firebase config publicly; gates the Supabase anon key behind auth
-- **Media upload** — receives 5 MB chunks, writes to Supabase Storage and records in the DB
-- **Media proxy** — verifies enrollment then streams chunk bytes to the Service Worker
-- **LiveKit token** — issues a scoped participant token for students joining a live session
-- **Room management** — teacher-gated function that creates the room and configures Auto Egress recording
-- **Egress webhook** — fires when a session ends and writes the recording asset ID to the lecture record
-- **Room lifecycle** — scheduled internal function for room cleanup and auto-start logic
+All functions verify Firebase JWTs manually. Supabase's built-in JWT check rejects Firebase tokens because they come from a different issuer.
 
 ---
 
