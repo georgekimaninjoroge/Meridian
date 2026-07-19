@@ -2,13 +2,6 @@
   <img src="https://raw.githubusercontent.com/georgekimaninjoroge/Meridian/main/assets/meridian.png" alt="Meridian" width="100%"/>
 </p>
 
-<p align="center">
-  <a href="https://meridianlms.netlify.app">meridianlms.netlify.app</a> &nbsp;·&nbsp;
-  Apache 2.0 &nbsp;·&nbsp;
-  Vanilla JS + TypeScript &nbsp;·&nbsp;
-  No build step
-</p>
-
 ---
 
 ## The Problem
