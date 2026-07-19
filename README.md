@@ -225,24 +225,6 @@ All functions verify Firebase JWTs manually. Supabase's built-in JWT check rejec
 
 ---
 
-## Tech Stack
-
-| Concern | Technology |
-|---|---|
-| Frontend | Vanilla JS (ES Modules), no bundler, no framework |
-| Offline storage | IndexedDB (custom wrapper), Cache API, LocalStorage |
-| Background sync | Service Worker (custom virtual filesystem and cache strategies) |
-| Auth | Firebase Auth (`browserLocalPersistence`) |
-| Database | Supabase Postgres (RLS enabled) |
-| File storage | Supabase Storage (HTTP Range, chunked) |
-| Edge compute | Supabase Edge Functions (Deno) |
-| Live video | LiveKit Cloud |
-| Video player | Plyr |
-| PDF rendering | PDF.js |
-
-
----
-
 ## License
 
 Apache 2.0 © [George Kimani Njoroge](https://github.com/georgekimaninjoroge)
