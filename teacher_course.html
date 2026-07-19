@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Teacher Course | Meridian Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="manifest" href="/manifest.json">
+<style>
+*{ margin:0; padding:0; box-sizing:border-box; }
+:root{
+  --surface:rgba(255,255,255,.72); --border:rgba(17,24,39,.06);
+  --text:#111827; --sub:#6b7280; --accent:#4f6b52;
+  --shadow:0 10px 30px rgba(15,23,42,.05);
+  --amber:#b7791f; --red:#c24141; --green:#3f7a54;
+}
+body{ font-family:"Inter",sans-serif; background:radial-gradient(circle at top left,#ebe5db 0%,transparent 26%),linear-gradient(to bottom,#faf9f7 0%,#f3f1eb 100%); color:var(--text); min-height:100vh; overflow-x:hidden; }
+.navbar{ position:sticky; top:0; z-index:100; backdrop-filter:blur(18px); background:rgba(250,249,247,.82); border-bottom:1px solid var(--border); }
+.nav-inner{ max-width:1400px; margin:auto; height:82px; padding:0 36px; display:flex; align-items:center; justify-content:space-between; gap:32px; }
+.brand{ display:flex; align-items:center; gap:14px; flex-shrink:0; }
+.logo{ width:46px; height:46px; border-radius:16px;  display:grid; place-items:center; color:white; font-weight:700; font-size:15px; }
+.logo img{ width:25px; height:auto; object-fit:contain;   }
+.brand-text{ display:flex; flex-direction:column; }
+.brand-title{ font-size:15px; font-weight:700; letter-spacing:-.02em; }
+.brand-sub{ font-size:12px; color:var(--sub); }
+.nav-links{ display:flex; align-items:center; gap:12px; flex:1; justify-content:center; }
+.nav-btn{ border:none; background:transparent; height:46px; padding:0 18px; border-radius:14px; display:flex; align-items:center; gap:10px; color:var(--sub); font-size:14px; font-weight:500; cursor:pointer; transition:.2s ease; }
+.nav-btn svg{ width:18px; height:18px; }
+.nav-btn:hover,.nav-btn.active{ background:#e8efe8; color:#4f6b52; }
+/* Hamburger */
+.hamburger{ display:none; width:44px; height:44px; border:none; background:transparent; border-radius:14px; cursor:pointer; flex-direction:column; align-items:center; justify-content:center; gap:5px; transition:.2s ease; }
+.hamburger:hover{ background:#e8efe8; }
+.hamburger span{ display:block; width:20px; height:2px; background:#6b7280; border-radius:2px; transition:.25s ease; }
+.hamburger.open span:nth-child(1){ transform:translateY(7px) rotate(45deg); background:#4f6b52; }
+.hamburger.open span:nth-child(2){ opacity:0; transform:scaleX(0); }
+.hamburger.open span:nth-child(3){ transform:translateY(-7px) rotate(-45deg); background:#4f6b52; }
+/* Mobile menu drawer */
+.mobile-menu{ display:none; position:fixed; top:82px; left:0; right:0; background:rgba(250,249,247,.97); backdrop-filter:blur(20px); border-bottom:1px solid var(--border); z-index:99; padding:12px 16px 16px; flex-direction:column; gap:4px; }
+.mobile-menu.open{ display:flex; }
+.mobile-menu .nav-btn{ width:100%; justify-content:flex-start; height:52px; font-size:15px; }
+@media(max-width:950px){
+  .nav-links{ display:none; }
+  .hamburger{ display:flex; }
+  .nav-inner{ padding:0 16px; }
+  .brand-sub{ display:none; }
+}
+@media(max-width:1100px){ .content-grid{ grid-template-columns:1fr; } .sidebar{ position:relative; top:0; } .course-title{ font-size:42px; } .hero-top{ flex-direction:column; } .course-stats-strip{ grid-template-columns:repeat(2,1fr); } }
+@media(max-width:768px){ .page{ padding:16px 14px 30px; } .hero{ padding:24px; border-radius:26px; } .course-title{ font-size:30px; } .surface{ padding:18px; border-radius:22px; } .content-top{ flex-direction:column; } .assignment-row{ flex-direction:column; align-items:flex-start; } .course-stats-strip{ grid-template-columns:1fr 1fr; } .hero-actions{ flex-direction:column; align-items:stretch; } .hero-btn{ height:48px; } .section-head{ flex-wrap:wrap; gap:10px; } }
+@media(max-width:480px){ .course-stats-strip{ grid-template-columns:1fr; } .course-title{ font-size:26px; } .content-left{ flex-direction:column; } }.page{ width:100%; max-width:1450px; margin:auto; padding:32px 28px 40px; }
+.hero{ position:relative; overflow:hidden; border-radius:38px; padding:38px; color:white; margin-bottom:28px; box-shadow:0 25px 70px rgba(79,107,82,.14); }
+.hero::before{ content:""; position:absolute; width:360px; height:360px; border-radius:50%; background:rgba(255,255,255,.06); top:-180px; right:-120px; }
+.hero-top{ display:flex; justify-content:space-between; gap:20px; flex-wrap:wrap; }
+.hero-left{ max-width:700px; }
+.course-title{ font-size:54px; line-height:.95; font-weight:800; letter-spacing:-.06em; margin-bottom:18px; }
+.course-meta{ color:rgba(255,255,255,.82); font-size:15px; line-height:1.8; }
+.hero-actions{ display:flex; align-items:flex-end; gap:14px; flex-wrap:wrap; }
+.hero-btn{ height:54px; border:none; padding:0 24px; border-radius:18px; font-size:14px; font-weight:700; cursor:pointer; transition:.2s ease; position:relative; }
+.hero-btn.primary{ background:white; color:var(--accent); }
+.hero-btn.secondary{ background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); color:white; }
+.hero-btn.danger-soft{ background:rgba(194,65,65,.18); border:1px solid rgba(255,255,255,.1); color:white; }
+.content-grid{ display:grid; grid-template-columns:290px 1fr; gap:24px; }
+.sidebar{ position:sticky; top:100px; height:fit-content; background:var(--surface); backdrop-filter:blur(20px); border:1px solid var(--border); border-radius:30px; padding:20px; box-shadow:var(--shadow); }
+.side-title{ font-size:12px; font-weight:700; letter-spacing:.14em; color:#9ca3af; margin-bottom:18px; }
+.side-item{ height:54px; display:flex; align-items:center; justify-content:space-between; padding:0 18px; border-radius:16px; cursor:pointer; margin-bottom:10px; font-size:14px; font-weight:600; color:#4b5563; transition:.2s ease; }
+.side-item:hover{ background:rgba(79,107,82,.06); }
+.side-item.active{ background:var(--accent); color:white; }
+.side-badge{ background:#ecfdf3; color:#15803d; font-size:11px; font-weight:800; padding:5px 10px; border-radius:999px; }
+.side-item.active .side-badge{ background:rgba(255,255,255,.2); color:white; }
+.main{ display:flex; flex-direction:column; gap:24px; }
+.surface{ background:var(--surface); backdrop-filter:blur(20px); border:1px solid var(--border); border-radius:32px; padding:28px; box-shadow:var(--shadow); }
+.section-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
+.section-title{ font-size:28px; font-weight:800; letter-spacing:-.05em; }
+.section-link{ color:var(--accent); text-decoration:none; font-size:14px; font-weight:700; cursor:pointer; border:none; background:none; }
+.section-link.add{ background:var(--accent); color:white; padding:10px 18px; border-radius:12px; font-size:13px; }
+.section-link.start-now{ background:linear-gradient(135deg,#4f6b52,#7f9679); box-shadow:0 10px 22px rgba(79,107,82,.22); }
+.content-scroll{ overflow-y:visible; padding-right:6px; }
+.content-scroll::-webkit-scrollbar{ width:8px; }
+.content-scroll::-webkit-scrollbar-thumb{ background:rgba(79,107,82,.22); border-radius:20px; }
+.content-list{ display:flex; flex-direction:column; gap:16px; }
+.content-row{ background:white; border-radius:24px; border:1px solid rgba(17,24,39,.05); padding:22px; transition:.2s ease; }
+.content-row:hover{ transform:translateY(-2px); box-shadow:0 12px 24px rgba(15,23,42,.05); }
+.content-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:20px; margin-bottom:18px; }
+.content-left{ display:flex; gap:16px; }
+.week-badge{ min-width:58px; height:58px; border-radius:18px; background:rgba(79,107,82,.08); color:var(--accent); display:grid; place-items:center; font-size:13px; font-weight:800; }
+.content-title{ font-size:20px; font-weight:700; margin-bottom:6px; }
+.content-sub{ font-size:14px; color:var(--sub); line-height:1.7; }
+.content-status{ background:#f3f4f6; color:#374151; padding:10px 14px; border-radius:12px; font-size:12px; font-weight:800; letter-spacing:.05em; white-space:nowrap; }
+.live-pill{ background:linear-gradient(135deg,#4f6b52,#7f9679); color:white; padding:10px 16px; border-radius:14px; font-size:12px; font-weight:800; letter-spacing:.05em; box-shadow:0 10px 22px rgba(79,107,82,.18); white-space:nowrap; cursor:pointer; }
+.resource-grid{ display:flex; flex-wrap:wrap; gap:12px; margin-bottom:18px; }
+.resource-btn{ height:46px; border:none; background:#f3f4f6; color:#374151; padding:0 18px; border-radius:14px; font-size:13px; font-weight:700; cursor:pointer; transition:.2s ease; }
+.resource-btn:hover{ background:rgba(79,107,82,.1); color:var(--accent); }
+.teacher-btn.uploaded{ background:#ecfdf3; color:#15803d; border-color:#15803d; }
+.teacher-btn.uploaded:hover{ background:#d1fae5; }
+/* Teacher controls strip */
+.teacher-controls{ display:flex; flex-wrap:wrap; gap:10px; padding-top:18px; border-top:1px dashed rgba(79,107,82,.15); }
+.teacher-btn{ height:40px; border:1.5px solid rgba(79,107,82,.22); background:transparent; color:var(--accent); padding:0 16px; border-radius:12px; font-size:12px; font-weight:700; cursor:pointer; transition:.2s ease; display:flex; align-items:center; gap:8px; }
+.teacher-btn:hover{ background:rgba(79,107,82,.08); border-color:var(--accent); }
+.teacher-btn svg{ width:14px; height:14px; }
+.teacher-btn.danger{ border-color:rgba(194,65,65,.25); color:var(--red); }
+.teacher-btn.danger:hover{ background:#fbe9e7; border-color:var(--red); }
+.btn-go-live{ height:40px; border:none; background:linear-gradient(135deg,#4f6b52,#7f9679); color:white; padding:0 18px; border-radius:12px; font-size:12px; font-weight:800; letter-spacing:.03em; cursor:pointer; transition:.2s ease; display:flex; align-items:center; gap:8px; box-shadow:0 10px 22px rgba(79,107,82,.22); white-space:nowrap; }
+.btn-go-live svg{ width:14px; height:14px; flex-shrink:0; }
+.btn-go-live:hover{ filter:brightness(1.06); transform:translateY(-1px); }
+.btn-go-live.ending{ background:linear-gradient(135deg,#8a4646,#a86a6a); box-shadow:0 10px 22px rgba(138,70,70,.22); }
+/* Grading rows */
+.assignment-list{ display:flex; flex-direction:column; gap:14px; }
+.assignment-row{ background:white; border-radius:22px; padding:20px 22px; border:1px solid rgba(17,24,39,.04); display:flex; justify-content:space-between; align-items:center; gap:20px; }
+.assignment-left{ display:flex; align-items:center; gap:16px; }
+.assignment-icon{ width:52px; height:52px; border-radius:16px; background:#f3f4f6; display:grid; place-items:center; font-size:13px; font-weight:800; color:#374151; }
+.assignment-title{ font-size:17px; font-weight:700; margin-bottom:4px; }
+.assignment-sub{ font-size:14px; color:var(--sub); }
+.assignment-actions{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+.assignment-btn{ height:46px; border:none; background:var(--accent); color:white; padding:0 18px; border-radius:14px; font-size:13px; font-weight:700; cursor:pointer; }
+.assignment-btn.outline{ background:transparent; border:1.5px solid rgba(79,107,82,.3); color:var(--accent); }
+.assignment-btn.outline:hover{ background:rgba(79,107,82,.08); }
+/* Stats overview strip */
+.course-stats-strip{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px; }
+.stat-mini{ background:white; border-radius:18px; padding:18px 20px; border:1px solid rgba(17,24,39,.05); }
+.stat-mini-val{ font-size:28px; font-weight:800; letter-spacing:-.04em; margin-bottom:4px; }
+.stat-mini-label{ font-size:13px; color:var(--sub); }
+@media(max-width:1100px){ .content-grid{ grid-template-columns:1fr; } .sidebar{ position:relative; top:0; } .course-title{ font-size:42px; } .hero-top{ flex-direction:column; } .course-stats-strip{ grid-template-columns:repeat(2,1fr); } }
+@media(max-width:768px){ .page{ padding:0 14px 30px; } .hero{ padding:28px; border-radius:30px; } .course-title{ font-size:36px; } .surface{ padding:22px; border-radius:26px; } .content-top{ flex-direction:column; } .assignment-row{ flex-direction:column; align-items:flex-start; } .course-stats-strip{ grid-template-columns:1fr 1fr; } }
+</style>
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16x16.png">
+  <link rel="manifest" href="assets/icons/site.webmanifest">
+</head>
+<body>
+
+<!-- Standalone nav (hidden when embedded in teacher-dashboard) -->
+<header class="navbar" id="standaloneNav">
+  <div class="nav-inner">
+    <div class="brand">
+      <div class="logo"><img src="assets/logo.svg" alt="Meridian"></div>
+      <div class="brand-text">
+        <div class="brand-title">Meridian</div>
+        <div class="brand-sub">Teacher Portal</div>
+      </div>
+    </div>
+    <nav class="nav-links">
+      <button class="nav-btn" onclick="window.location.href='teacher.html'">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>
+        Dashboard
+      </button>
+      <button class="nav-btn active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        My Courses
+      </button>
+    </nav>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button class="hamburger" id="hamburgerBtn" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- Mobile nav drawer (standalone only) -->
+<div class="mobile-menu" id="mobileMenu">
+  <button class="nav-btn" onclick="window.location.href='teacher.html'">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>
+    Dashboard
+  </button>
+  <button class="nav-btn active">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+    My Courses
+  </button>
+</div>
+
+<div id="course-root"></div>
+
+<script>
+/* ================================================================
+   COURSE DATA (teacher perspective)
+   ================================================================ */
+/* ================================================================
+   COURSE DATA — fetched from IndexedDB (synced from Supabase)
+   No hardcoded courses/lectures/assignments.
+   Uses dynamic import() since this script may be re-injected as a
+   plain (non-module) script by teacher.html's embedding logic.
+   ================================================================ */
+let _getById, _getLecturesByCourse, _getAssignmentsByCourse, _fetchAssessmentsByCourse;
+let _upsertLecture, _deleteLecture, _upsertAssignment, _deleteAssignment, _uploadFile, _syncFromSupabase;
+let _MediaUploader;
+
+async function loadDeps() {
+  if (_getById) return; // already loaded
+  const dbMod = await import("./JS/db.js");
+  const supaMod = await import("./JS/supabase.js");
+  const s3Mod = await import("./JS/S3.js");
+  _getById = dbMod.getById;
+  _getLecturesByCourse = dbMod.getLecturesByCourse;
+  _getAssignmentsByCourse = dbMod.getAssignmentsByCourse;
+  _upsertLecture = supaMod.upsertLecture;
+  _deleteLecture = supaMod.deleteLecture;
+  _upsertAssignment = supaMod.upsertAssignment;
+  _deleteAssignment = supaMod.deleteAssignment;
+  _uploadFile = supaMod.uploadFile;
+  _syncFromSupabase = supaMod.syncFromSupabase;
+  _fetchAssessmentsByCourse = supaMod.fetchAssessmentsByCourse;
+  _MediaUploader = s3Mod.MediaUploader;
+}
+
+function teacherControlsHTML(lecture) {
+  const todayISO = new Date().toISOString().slice(0, 10);
+  const isScheduledToday = lecture.scheduledFor === todayISO;
+  const showLiveToggle = lecture.live || isScheduledToday;
+  const hasNotes = !!(lecture.notesUrl && !lecture.notesUrl.startsWith("/test"));
+  const hasVideo = !!(lecture.videoUrl && !lecture.videoUrl.startsWith("/test") && !lecture.videoUrl.startsWith("/"));
+  const liveToggleBtn = showLiveToggle ? `
+      <button class="btn-go-live ${lecture.live ? 'ending' : ''} btn-toggle-live" data-id="${lecture.id}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        ${lecture.live ? "End Lecture" : "Go Live"}
+      </button>` : "";
+  return `
+    <div class="teacher-controls">
+      <button class="teacher-btn btn-edit-lecture" data-id="${lecture.id}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Edit Lecture
+      </button>
+      <button class="teacher-btn btn-upload-notes ${hasNotes ? 'uploaded' : ''}" data-id="${lecture.id}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        ${hasNotes ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M20 6L9 17l-5-5"/></svg> Notes Uploaded' : "Upload Notes"}
+      </button>
+      <button class="teacher-btn btn-upload-recording ${hasVideo ? 'uploaded' : ''}" data-id="${lecture.id}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+        ${hasVideo ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M20 6L9 17l-5-5"/></svg> Recording Uploaded' : "Upload Recording"}
+      </button>
+      <button class="teacher-btn btn-create-assignment" data-id="${lecture.id}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+        Create Assignment
+      </button>
+      ${liveToggleBtn}
+      <button class="teacher-btn danger btn-delete-lecture" data-id="${lecture.id}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+        Delete
+      </button>
+    </div>`;
+}
+
+function renderHTML(course, lectures, assignments, from, to) {
+  const isOnline = course.mode === "online";
+  const heroStyle = `background:linear-gradient(135deg,${from} 0%,${to} 100%)`;
+  const currentWeek = lectures.length ? Math.max(...lectures.map(l => l.weekNumber || 0)) : 0;
+
+  const statsHTML = `
+    <div class="course-stats-strip">
+      <div class="stat-mini"><div class="stat-mini-val">—</div><div class="stat-mini-label">Enrolled Students</div></div>
+      <div class="stat-mini"><div class="stat-mini-val">${lectures.length}</div><div class="stat-mini-label">Weeks Covered</div></div>
+      <div class="stat-mini"><div class="stat-mini-val">${assignments.length}</div><div class="stat-mini-label">Assessments</div></div>
+      <div class="stat-mini"><div class="stat-mini-val">W${currentWeek}</div><div class="stat-mini-label">Current Week</div></div>
+    </div>`;
+
+  const weeksHTML = lectures.slice().sort((a,b) => (b.weekNumber||0)-(a.weekNumber||0)).map(function(w) {
+    const isLive = !!w.live;
+    const statusEl = isLive
+      ? `<div style="display:flex;gap:10px;flex-wrap:wrap;"><div class="live-pill">LIVE TODAY</div><div class="content-status">${w.date||""}</div></div>`
+      : `<div class="content-status">${w.date||""}</div>`;
+    const resBtns = (w.resources || []).map(r => {
+      const dataAttr = r === "Lecture Notes"
+        ? `data-action="open-notes" data-notes-url="${w.notesUrl||''}"`
+        : r === "Lecture Recording"
+        ? `data-action="open-recording" data-lecture-id="${w.id}"`
+        : "";
+      return `<button class="resource-btn" ${dataAttr}>${r}</button>`;
+    }).join("");
+    return `
+      <div class="content-row" data-lecture-id="${w.id}">
+        <div class="content-top">
+          <div class="content-left">
+            <div class="week-badge">W${w.weekNumber}</div>
+            <div>
+              <div class="content-title">${w.title || "Untitled"}</div>
+              <div class="content-sub">${w.description || ""}</div>
+            </div>
+          </div>
+          ${statusEl}
+        </div>
+        <div class="resource-grid">${resBtns}</div>
+        ${teacherControlsHTML(w)}
+      </div>`;
+  }).join("") || `<div style="padding:30px;text-align:center;color:var(--sub);">No lectures yet. Click "+ Add Lecture" to create one.</div>`;
+
+  const assessHTML = assignments.map(function(a) {
+    const editBtn = a._isFullAssessment
+      ? `<button class="assignment-btn btn-open-assessment" data-id="${a.id}">Edit →</button>`
+      : `<button class="assignment-btn btn-edit-assignment" data-id="${a.id}">Edit</button>`;
+    const delBtn = a._isFullAssessment
+      ? ""  // full assessments deleted from assessment.html
+      : `<button class="assignment-btn outline btn-delete-assignment" data-id="${a.id}">Delete</button>`;
+    const badge = a._isFullAssessment
+      ? `<span style="font-size:10px;font-weight:700;background:rgba(79,107,82,.12);color:#4f6b52;padding:2px 7px;border-radius:999px;margin-left:6px;vertical-align:middle;">${a.status || "draft"}</span>`
+      : "";
+    const sub = [a.due ? "Due: " + a.due : "", a.duration_mins ? a.duration_mins + " min" : ""].filter(Boolean).join(" · ");
+    return `
+      <div class="assignment-row" data-assignment-id="${a.id}">
+        <div class="assignment-left">
+          <div class="assignment-icon">${a.type}</div>
+          <div>
+            <div class="assignment-title">${a.title}${badge}</div>
+            <div class="assignment-sub">${sub}</div>
+          </div>
+        </div>
+        <div class="assignment-actions">
+          ${delBtn}
+          ${editBtn}
+        </div>
+      </div>`;
+  }).join("") || `<div style="padding:20px;text-align:center;color:var(--sub);">No assignments yet.</div>`;
+
+  document.getElementById("course-root").innerHTML = `
+    <div class="page">
+      <div class="hero" style="${heroStyle}">
+        <div class="hero-top">
+          <div class="hero-left">
+            <div class="course-title">${course.code}<br>${course.title}</div>
+            <div class="course-meta">
+              ${course.semester || ""} &bull; ${course.schedule || ""}<br>
+              ${course.lecturer || "TBA"} &nbsp;&middot;&nbsp; ${isOnline ? "Online" : (course.mode||"").charAt(0).toUpperCase()+(course.mode||"").slice(1)}
+            </div>
+          </div>
+          <div class="hero-actions">
+            <button class="hero-btn primary" style="position:relative;" id="btn-manage-assignments">
+              Manage Assignments
+              <span style="position:absolute;top:-8px;right:-8px;background:#c24141;color:white;font-size:11px;font-weight:700;min-width:20px;height:20px;border-radius:999px;display:flex;align-items:center;justify-content:center;padding:0 5px;border:2px solid white;">${assignments.length}</span>
+            </button>
+            <button class="hero-btn secondary" id="btn-post-announcement">Post Announcement</button>
+            <button class="hero-btn secondary" id="btn-add-week">Add Week</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="content-grid">
+        <div class="sidebar">
+          <div class="side-title">TEACHER TOOLS</div>
+          <div class="side-item active"><span>Overview</span></div>
+          <div class="side-item"><span>Lectures</span></div>
+          <div class="side-item" id="sidebar-assessments">
+            <span>Assessments</span>
+            <div class="side-badge" id="badge-ungraded" style="display:none;background:#c24141;color:#fff;"></div>
+          </div>
+          <div class="side-item"><span>Resources</span></div>
+          <div class="side-item">
+            <span>Grades</span>
+            <div class="side-badge">NEW</div>
+          </div>
+          <div class="side-item"><span>Announcements</span></div>
+          <div class="side-item"><span>Students</span></div>
+          <div class="side-item"><span>Attendance</span></div>
+        </div>
+
+        <div class="main">
+          <div class="surface">
+            ${statsHTML}
+            <div class="section-head">
+              <div class="section-title">Lecture Management</div>
+              <div style="display:flex; gap:10px;">
+                <button class="section-link add" id="btn-schedule-lecture">+ Schedule</button>
+                <button class="section-link add start-now" id="btn-start-class">Start Class Now</button>
+              </div>
+            </div>
+            <div class="content-scroll">
+              <div class="content-list">${weeksHTML}</div>
+            </div>
+          </div>
+
+          <div class="surface">
+            <div class="section-head">
+              <div class="section-title">Assignments</div>
+              <button class="section-link add" id="btn-add-assignment">+ Add Assignment</button>
+            </div>
+            <div class="assignment-list">${assessHTML}</div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+
+  document.querySelectorAll(".side-item").forEach(function(item) {
+    item.addEventListener("click", function() {
+      document.querySelectorAll(".side-item").forEach(function(el){ el.classList.remove("active"); });
+      item.classList.add("active");
+    });
+  });
+
+  wireActions(course.id, lectures, assignments);
+  updateSidebarBadges(course.id).catch(()=>{});
+}
+
+/* ================================================================
+   ACTION WIRING — buttons that actually do something
+   ================================================================ */
+function nextWeekNumber(lectures) {
+  return lectures.length ? Math.max(...lectures.map(l => l.weekNumber || 0)) + 1 : 1;
+}
+
+function pickFile(accept) {
+  return new Promise(resolve => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = accept;
+    input.onchange = () => resolve(input.files[0] || null);
+    input.click();
+  });
+}
+
+async function updateSidebarBadges(courseId) {
+  const {hw, cat} = await fetchUngradedCount(courseId);
+  const total = hw + cat;
+  const badge = document.getElementById('badge-ungraded');
+  if (badge) { badge.textContent = total > 0 ? total : ''; badge.style.display = total > 0 ? '' : 'none'; }
+}
+
+async function rerender(courseId, from, to) {
+  updateSidebarBadges(courseId).catch(()=>{});
+  await _syncFromSupabase().catch(()=>{});
+  const course = await _getById("courses", courseId);
+  const lectures = await _getLecturesByCourse(courseId);
+  const assignments = await _getAssignmentsByCourse(courseId);
+  renderHTML(course, lectures, assignments, from, to);
+}
+
+function formatDateHuman(d) {
+  return d.toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
+}
+
+// Minimal native date-picker prompt — avoids freeform date typing entirely.
+function pickDate(defaultISO) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:9999;";
+    overlay.innerHTML = `
+      <div style="background:#fff;border-radius:14px;padding:24px;display:flex;flex-direction:column;gap:14px;min-width:260px;">
+        <div style="font-weight:700;font-size:15px;">Schedule lecture for</div>
+        <input type="date" id="schedulePickerInput" value="${defaultISO}" style="height:40px;border:1.5px solid rgba(79,107,82,.22);border-radius:10px;padding:0 10px;font-size:14px;">
+        <div style="display:flex;gap:10px;justify-content:flex-end;">
+          <button id="schedulePickerCancel" style="height:36px;padding:0 14px;border-radius:10px;border:1.5px solid rgba(79,107,82,.22);background:none;cursor:pointer;">Cancel</button>
+          <button id="schedulePickerConfirm" style="height:36px;padding:0 14px;border-radius:10px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-weight:700;">Schedule</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    const input = overlay.querySelector("#schedulePickerInput");
+    overlay.querySelector("#schedulePickerCancel").onclick = () => { overlay.remove(); resolve(null); };
+    overlay.querySelector("#schedulePickerConfirm").onclick = () => { const v = input.value; overlay.remove(); resolve(v || null); };
+  });
+}
+
+// ─── Fetch ungraded attempts count ───────────────────────────────────────────
+async function fetchUngradedCount(courseId) {
+  try {
+    const { getConfig } = await import('./JS/config.js');
+    const sess = JSON.parse(localStorage.getItem('meridian_session')||'{}');
+    let idToken = sess.idToken || '';
+    try {
+      const { getAuth } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+      const u = getAuth().currentUser;
+      if (u) idToken = await u.getIdToken();
+    } catch {}
+    const cfg = await getConfig(idToken).catch(()=>({supabaseKey:''}));
+    const k = cfg.supabaseKey;
+    const SURL = 'https://fzkpmptsnnkafaaeqhnf.supabase.co';
+    // Get all assessments for this course
+    const aRes = await fetch(`${SURL}/rest/v1/assessments?course_id=eq.${courseId}&select=id,type`, {
+      headers: { apikey: k, Authorization: `Bearer ${k}` }
+    });
+    if (!aRes.ok) return {hw:0,cat:0};
+    const assessments = await aRes.json();
+    if (!assessments.length) return {hw:0,cat:0};
+    const ids = assessments.map(a=>a.id).join(',');
+    // Get submitted attempts that have no score (written/file = ungraded)
+    const atRes = await fetch(`${SURL}/rest/v1/attempts?assessment_id=in.(${ids})&status=eq.submitted&score=is.null&select=id,assessment_id`, {
+      headers: { apikey: k, Authorization: `Bearer ${k}` }
+    });
+    if (!atRes.ok) return {hw:0,cat:0};
+    const attempts = await atRes.json();
+    // Split by assessment type
+    const aMap = {};
+    assessments.forEach(a=>aMap[a.id]=a.type);
+    let hw=0, cat=0;
+    attempts.forEach(at=>{
+      const type = aMap[at.assessment_id];
+      if (type==='HW') hw++;
+      else cat++;
+    });
+    return {hw, cat};
+  } catch { return {hw:0,cat:0}; }
+}
+
+// ─── Modal system ─────────────────────────────────────────────────────────────
+// Injects modal CSS once, then provides showModal() / showConfirm() helpers.
+
+function ensureModalStyles() {
+  if (document.getElementById("mdn-modal-styles")) return;
+  const s = document.createElement("style");
+  s.id = "mdn-modal-styles";
+  s.textContent = `
+    .mdn-overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px;opacity:0;transition:opacity .2s ease;}
+    .mdn-overlay.visible{opacity:1;}
+    .mdn-card{background:#faf9f7;border-radius:28px;padding:32px;width:100%;max-width:480px;box-shadow:0 32px 80px rgba(15,23,42,.18);transform:translateY(12px) scale(.97);transition:transform .22s ease,opacity .22s ease;opacity:0;display:flex;flex-direction:column;gap:20px;}
+    .mdn-overlay.visible .mdn-card{transform:translateY(0) scale(1);opacity:1;}
+    .mdn-header{display:flex;align-items:center;justify-content:space-between;}
+    .mdn-title{font-size:20px;font-weight:800;letter-spacing:-.04em;color:#111827;}
+    .mdn-close{width:36px;height:36px;border:none;background:rgba(17,24,39,.06);border-radius:12px;cursor:pointer;display:grid;place-items:center;color:#6b7280;transition:.15s ease;flex-shrink:0;}
+    .mdn-close:hover{background:rgba(17,24,39,.1);color:#111827;}
+    .mdn-body{display:flex;flex-direction:column;gap:14px;}
+    .mdn-field{display:flex;flex-direction:column;gap:6px;}
+    .mdn-label{font-size:12px;font-weight:700;letter-spacing:.08em;color:#6b7280;text-transform:uppercase;}
+    .mdn-input,.mdn-textarea,.mdn-select{width:100%;border:1.5px solid rgba(17,24,39,.1);border-radius:14px;padding:12px 14px;font-size:14px;font-family:inherit;color:#111827;background:#fff;transition:.15s ease;outline:none;}
+    .mdn-input:focus,.mdn-textarea:focus,.mdn-select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,107,82,.1);}
+    .mdn-textarea{resize:vertical;min-height:90px;line-height:1.6;}
+    .mdn-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px;}
+    .mdn-footer{display:flex;gap:10px;justify-content:flex-end;padding-top:4px;}
+    .mdn-btn{height:44px;padding:0 20px;border-radius:14px;font-size:14px;font-weight:700;cursor:pointer;border:none;transition:.15s ease;}
+    .mdn-btn.cancel{background:rgba(17,24,39,.06);color:#6b7280;}
+    .mdn-btn.cancel:hover{background:rgba(17,24,39,.1);}
+    .mdn-btn.primary{background:var(--accent);color:#fff;box-shadow:0 8px 20px rgba(79,107,82,.2);}
+    .mdn-btn.primary:hover{filter:brightness(1.06);transform:translateY(-1px);}
+    .mdn-btn.danger{background:#c24141;color:#fff;box-shadow:0 8px 20px rgba(194,65,65,.2);}
+    .mdn-btn.danger:hover{filter:brightness(1.06);}
+    .mdn-divider{border:none;border-top:1px solid rgba(17,24,39,.07);margin:0;}
+    .mdn-warn{background:#fef3c7;border:1px solid #fbbf24;border-radius:14px;padding:12px 14px;font-size:13px;color:#92400e;line-height:1.5;}
+  `;
+  document.head.appendChild(s);
+}
+
+// Generic modal: fields = [{id, label, type, placeholder, value, options}]
+// Returns Promise<object|null> — null if cancelled.
+function showModal({ title, fields, confirmLabel = "Save", danger = false }) {
+  ensureModalStyles();
+  return new Promise(resolve => {
+    const overlay = document.createElement("div");
+    overlay.className = "mdn-overlay";
+
+    const fieldsHTML = fields.map(f => {
+      if (f.type === "select") {
+        const opts = f.options.map(o => `<option value="${o.value}" ${o.value === f.value ? "selected" : ""}>${o.label}</option>`).join("");
+        return `<div class="mdn-field"><label class="mdn-label">${f.label}</label><select class="mdn-select" id="mf_${f.id}">${opts}</select></div>`;
+      }
+      if (f.type === "textarea") {
+        return `<div class="mdn-field"><label class="mdn-label">${f.label}</label><textarea class="mdn-textarea" id="mf_${f.id}" placeholder="${f.placeholder||""}">${f.value||""}</textarea></div>`;
+      }
+      if (f.type === "warn") {
+        return `<div class="mdn-warn">${f.text}</div>`;
+      }
+      return `<div class="mdn-field"><label class="mdn-label">${f.label}</label><input class="mdn-input" id="mf_${f.id}" type="${f.type||"text"}" placeholder="${f.placeholder||""}" value="${f.value||""}"></div>`;
+    }).join("");
+
+    overlay.innerHTML = `
+      <div class="mdn-card">
+        <div class="mdn-header">
+          <div class="mdn-title">${title}</div>
+          <button class="mdn-close" id="mdn_close">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <hr class="mdn-divider">
+        <div class="mdn-body">${fieldsHTML}</div>
+        <div class="mdn-footer">
+          <button class="mdn-btn cancel" id="mdn_cancel">Cancel</button>
+          <button class="mdn-btn ${danger ? "danger" : "primary"}" id="mdn_confirm">${confirmLabel}</button>
+        </div>
+      </div>`;
+
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add("visible"));
+
+    const close = (result) => {
+      overlay.classList.remove("visible");
+      setTimeout(() => overlay.remove(), 220);
+      resolve(result);
+    };
+
+    overlay.querySelector("#mdn_close").onclick = () => close(null);
+    overlay.querySelector("#mdn_cancel").onclick = () => close(null);
+    overlay.addEventListener("click", e => { if (e.target === overlay) close(null); });
+
+    overlay.querySelector("#mdn_confirm").onclick = () => {
+      const result = {};
+      fields.forEach(f => {
+        if (f.type === "warn") return;
+        result[f.id] = overlay.querySelector(`#mf_${f.id}`)?.value?.trim() ?? "";
+      });
+      close(result);
+    };
+
+    // Focus first input
+    setTimeout(() => overlay.querySelector(".mdn-input,.mdn-textarea,.mdn-select")?.focus(), 50);
+  });
+}
+
+// Simple confirm dialog
+function showConfirm({ title, message, confirmLabel = "Confirm", danger = true }) {
+  return showModal({
+    title, danger, confirmLabel,
+    fields: [{ id: "_msg", type: "warn", text: message }]
+  }).then(r => r !== null);
+}
+
+// Show a transient toast notification (replaces alert())
+function showToast(message, type = "success") {
+  ensureModalStyles();
+  const t = document.createElement("div");
+  t.style.cssText = `position:fixed;bottom:28px;right:28px;z-index:99999;background:${type==="error"?"#c24141":type==="warn"?"#b7791f":"#4f6b52"};color:#fff;padding:14px 20px;border-radius:16px;font-size:14px;font-weight:600;box-shadow:0 12px 32px rgba(0,0,0,.15);opacity:0;transform:translateY(8px);transition:.2s ease;max-width:320px;line-height:1.4;`;
+  t.textContent = message;
+  document.body.appendChild(t);
+  requestAnimationFrame(() => { t.style.opacity = "1"; t.style.transform = "translateY(0)"; });
+  setTimeout(() => { t.style.opacity = "0"; t.style.transform = "translateY(8px)"; setTimeout(() => t.remove(), 220); }, 3200);
+}
+
+// ─── wireActions ──────────────────────────────────────────────────────────────
+function wireActions(courseId, lectures, assignments) {
+  const from = sessionStorage.getItem("activeCourseFrom") || "#4f6b52";
+  const to = sessionStorage.getItem("activeCourseTo") || "#7f9679";
+
+  const startClassBtn = document.getElementById("btn-start-class");
+  if (startClassBtn) startClassBtn.addEventListener("click", async () => {
+    const data = await showModal({
+      title: "Start Live Class",
+      confirmLabel: "Start Now",
+      fields: [
+        { id: "title", label: "Lecture Title", placeholder: "e.g. Introduction to Databases" },
+        { id: "description", label: "Short Description", type: "textarea", placeholder: "What will students learn today?" }
+      ]
+    });
+    if (!data || !data.title) return;
+    const { title, description } = data;
+    const weekNumber = nextWeekNumber(lectures);
+    const today = new Date();
+    const id = `${courseId}_W${weekNumber}`;
+    startClassBtn.textContent = "Starting...";
+    try {
+      const otherLive = lectures.find(l => l.live);
+      if (otherLive) await _upsertLecture({ ...otherLive, live: false });
+      await _upsertLecture({ id, courseId, weekNumber, title, description, date: formatDateHuman(today), scheduledFor: today.toISOString().slice(0, 10), live: false, resources: [] });
+      const { startLecture } = await import("./JS/livekit.js");
+      const session = window._meridianSession;
+      await startLecture(id, session.uid, session.displayName || "Teacher");
+      await _upsertLecture({ id, courseId, weekNumber, title, description, date: formatDateHuman(today), scheduledFor: today.toISOString().slice(0, 10), live: true, resources: [] });
+      window.location.href = `live.html?lectureId=${encodeURIComponent(id)}&role=teacher&courseId=${encodeURIComponent(courseId)}`;
+    } catch (e) {
+      showToast("Failed to start class: " + e.message, "error");
+      startClassBtn.textContent = "Start Class Now";
+    }
+  });
+
+  const scheduleLectureBtn = document.getElementById("btn-schedule-lecture");
+  if (scheduleLectureBtn) scheduleLectureBtn.addEventListener("click", async () => {
+    const defaultISO = new Date().toISOString().slice(0, 10);
+    const data = await showModal({
+      title: "Schedule Lecture",
+      confirmLabel: "Schedule",
+      fields: [
+        { id: "title", label: "Lecture Title", placeholder: "e.g. Week 3 — Data Structures" },
+        { id: "description", label: "Short Description", type: "textarea", placeholder: "Brief overview..." },
+        { id: "scheduledFor", label: "Date", type: "date", value: defaultISO }
+      ]
+    });
+    if (!data || !data.title) return;
+    const { title, description, scheduledFor } = data;
+    if (!scheduledFor) return;
+    const weekNumber = nextWeekNumber(lectures);
+    const id = `${courseId}_W${weekNumber}`;
+    try {
+      await _upsertLecture({ id, courseId, weekNumber, title, description, date: formatDateHuman(new Date(scheduledFor + "T00:00:00")), scheduledFor, live: false, resources: [] });
+      await rerender(courseId, from, to);
+    } catch (e) { showToast("Failed to schedule: " + e.message, "error"); }
+  });
+
+  // Wire Assessments sidebar item
+  const sideAssessments = document.getElementById('sidebar-assessments');
+  if (sideAssessments) sideAssessments.addEventListener('click', () => {
+    window.location.href = `assessment.html?courseId=${courseId}&role=teacher`;
+  });
+
+  const manageAssignmentsBtn = document.getElementById("btn-manage-assignments");
+  if (manageAssignmentsBtn) manageAssignmentsBtn.addEventListener("click", () => {
+    window.location.href = `assessment.html?courseId=${courseId}&role=teacher`;
+  });
+
+  const addAssignmentBtn = document.getElementById("btn-add-assignment");
+  if (addAssignmentBtn) addAssignmentBtn.addEventListener("click", () => {
+    window.location.href = `assessment.html?courseId=${courseId}&role=teacher`;
+  });
+
+  // legacy inline add - keep stub
+  if (false) addAssignmentBtn.addEventListener("click", async () => {
+    const data = await showModal({
+      title: "Add Assignment",
+      confirmLabel: "Add",
+      fields: [
+        { id: "type", label: "Type", type: "select", value: "HW", options: [{ value:"HW", label:"Homework (HW)" }, { value:"CAT", label:"CAT" }, { value:"Quiz", label:"Quiz" }] },
+        { id: "title", label: "Title", placeholder: "e.g. Chapter 4 Questions" },
+        { id: "due", label: "Due Date", placeholder: "e.g. Due Sunday — 11:59 PM" }
+      ]
+    });
+    if (!data || !data.title) return;
+    const id = `${courseId}_${data.type.toUpperCase()}_${Date.now()}`;
+    try {
+      await _upsertAssignment({ id, courseId, type: data.type, title: data.title, due: data.due });
+      await rerender(courseId, from, to);
+    } catch (e) { showToast("Failed to add assignment: " + e.message, "error"); }
+  });
+
+  document.querySelectorAll(".btn-edit-lecture").forEach(btn => btn.addEventListener("click", async () => {
+    const id = btn.dataset.id;
+    const lecture = lectures.find(l => l.id === id);
+    if (!lecture) return;
+    const data = await showModal({
+      title: "Edit Lecture",
+      confirmLabel: "Save Changes",
+      fields: [
+        { id: "title", label: "Title", value: lecture.title, placeholder: "Lecture title" },
+        { id: "description", label: "Description", type: "textarea", value: lecture.description || "", placeholder: "Brief description" },
+        { id: "date", label: "Display Date", value: lecture.date || "", placeholder: "e.g. 14th June 2026" }
+      ]
+    });
+    if (!data || !data.title) return;
+    try {
+      await _upsertLecture({ ...lecture, title: data.title, description: data.description, date: data.date });
+      await rerender(courseId, from, to);
+    } catch (e) { showToast("Failed to update: " + e.message, "error"); }
+  }));
+
+  document.querySelectorAll(".btn-delete-lecture").forEach(btn => btn.addEventListener("click", async () => {
+    const id = btn.dataset.id;
+    const lecture = lectures.find(l => l.id === id);
+    const confirmed = await showConfirm({
+      title: "Delete Lecture",
+      message: `This will permanently delete <strong>${lecture?.title || "this lecture"}</strong> and all associated data. This cannot be undone.`,
+      confirmLabel: "Delete"
+    });
+    if (!confirmed) return;
+    try {
+      await _deleteLecture(id);
+      await rerender(courseId, from, to);
+    } catch (e) { showToast("Failed to delete: " + e.message, "error"); }
+  }));
+
+  document.querySelectorAll(".btn-toggle-live").forEach(btn => btn.addEventListener("click", async () => {
+    const id = btn.dataset.id;
+    const lecture = lectures.find(l => l.id === id);
+    if (!lecture) return;
+    if (!lecture.live) {
+      btn.textContent = "Starting...";
+      try {
+        const otherLive = lectures.find(l => l.id !== id && l.live);
+        if (otherLive) await _upsertLecture({ ...otherLive, live: false });
+        const { startLecture } = await import("./JS/livekit.js");
+        const session = window._meridianSession;
+        await startLecture(lecture.id, session.uid, session.displayName || "Teacher");
+        await _upsertLecture({ ...lecture, live: true });
+        await rerender(courseId, from, to);
+        window.location.href = `live.html?lectureId=${encodeURIComponent(lecture.id)}&role=teacher&courseId=${encodeURIComponent(courseId)}`;
+      } catch (e) {
+        showToast("Failed to start live lecture: " + e.message, "error");
+        btn.textContent = "Go Live";
+      }
+    } else {
+      try {
+        await _upsertLecture({ ...lecture, live: false });
+        await rerender(courseId, from, to);
+      } catch (e) { showToast("Failed to update: " + e.message, "error"); }
+    }
+  }));
+
+  document.querySelectorAll(".btn-upload-notes").forEach(btn => btn.addEventListener("click", async () => {
+    const id = btn.dataset.id;
+    const lecture = lectures.find(l => l.id === id);
+    if (!lecture) return;
+    const file = await pickFile(".pdf,application/pdf");
+    if (!file) return;
+    btn.textContent = "Uploading...";
+    try {
+      const url = await _uploadFile(file, courseId, lecture.weekNumber, "notes");
+      await _upsertLecture({ ...lecture, notesUrl: url, resources: [...new Set([...(lecture.resources||[]), "Lecture Notes"])] });
+      await rerender(courseId, from, to);
+      showToast("Notes uploaded.");
+    } catch (e) { showToast("Upload failed: " + e.message, "error"); btn.textContent = "Upload Notes"; }
+  }));
+
+  document.querySelectorAll(".btn-upload-recording").forEach(btn => btn.addEventListener("click", async () => {
+    const id = btn.dataset.id;
+    const lecture = lectures.find(l => l.id === id);
+    if (!lecture) return;
+    const file = await pickFile("video/mp4,video/*");
+    if (!file) return;
+    btn.textContent = "Uploading 0%";
+    btn.disabled = true;
+    try {
+      await new Promise((resolve, reject) => {
+        const up = new _MediaUploader(file, {
+          assetId:  lecture.id,   // stable — lecture UUID = storage folder
+          courseId,
+          type:     "video",
+        });
+        up.onProgress = pct => { btn.textContent = `Uploading ${pct}%`; };
+        up.onComplete = resolve;
+        up.onError    = reject;
+        up.start();
+      });
+      // Store lecture.id as videoUrl — mountVideoPlayer uses it directly
+      await _upsertLecture({ ...lecture, videoUrl: lecture.id, resources: [...new Set([...(lecture.resources||[]), "Lecture Recording"])] });
+      await rerender(courseId, from, to);
+      showToast("Recording uploaded.");
+    } catch (e) {
+      showToast("Upload failed: " + e.message, "error");
+      btn.textContent = "Upload Recording";
+      btn.disabled = false;
+    }
+  }));
+
+  // "Create Assignment" from lecture row → go to full assessment builder
+  document.querySelectorAll(".btn-create-assignment").forEach(btn => btn.addEventListener("click", () => {
+    if (window._embeddedInDashboard) {
+      sessionStorage.setItem("openCourseOnLoad", courseId);
+    }
+    window.location.href = `assessment.html?courseId=${courseId}&role=teacher`;
+  }));
+
+  document.querySelectorAll(".btn-edit-assignment").forEach(btn => btn.addEventListener("click", async () => {
+    const id = btn.dataset.id;
+    const a = assignments.find(x => x.id === id);
+    if (!a) return;
+    const data = await showModal({
+      title: "Edit Assignment",
+      confirmLabel: "Save",
+      fields: [
+        { id: "title", label: "Title", value: a.title },
+        { id: "due", label: "Due Date", value: a.due, placeholder: "e.g. Due Sunday — 11:59 PM" }
+      ]
+    });
+    if (!data || !data.title) return;
+    try {
+      await _upsertAssignment({ ...a, title: data.title, due: data.due });
+      await rerender(courseId, from, to);
+    } catch (e) { showToast("Failed: " + e.message, "error"); }
+  }));
+
+  document.querySelectorAll(".btn-delete-assignment").forEach(btn => btn.addEventListener("click", async () => {
+    const id = btn.dataset.id;
+    const a = assignments.find(x => x.id === id);
+    const confirmed = await showConfirm({
+      title: "Delete Assignment",
+      message: `Permanently delete <strong>${a?.title || "this assignment"}</strong>? This cannot be undone.`,
+      confirmLabel: "Delete"
+    });
+    if (!confirmed) return;
+    try {
+      await _deleteAssignment(id);
+      await rerender(courseId, from, to);
+    } catch (e) { showToast("Failed: " + e.message, "error"); }
+  }));
+
+  // "Edit →" on full assessments (CATs/quizzes) → go to assessment.html
+  document.querySelectorAll(".btn-open-assessment").forEach(btn => btn.addEventListener("click", () => {
+    const id = btn.dataset.id;
+    if (window._embeddedInDashboard) {
+      sessionStorage.setItem("openCourseOnLoad", courseId);
+    }
+    window.location.href = `assessment.html?courseId=${courseId}&editId=${id}&role=teacher`;
+  }));
+
+  const addWeekBtn = document.getElementById("btn-add-week");
+  if (addWeekBtn) addWeekBtn.addEventListener("click", () => scheduleLectureBtn && scheduleLectureBtn.click());
+
+  document.querySelectorAll(".resource-btn[data-action]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      if (btn.dataset.action === "open-notes") {
+        const url = btn.dataset.notesUrl;
+        if (url) window.open(url, "_blank"); else showToast("Notes not available.", "error");
+      } else if (btn.dataset.action === "open-recording") {
+        const lid = btn.dataset.lectureId;
+        const week = lid ? lid.split("_W")[1] : null;
+        if (week) window.location.href = `media.html?from=${courseId}&week=${week}&title=Lecture+Recording`;
+        else showToast("Recording not available.", "error");
+      }
+    });
+  });
+
+  const announceBtn = document.getElementById("btn-post-announcement");
+  if (announceBtn) announceBtn.addEventListener("click", async () => {
+    const data = await showModal({
+      title: "Post Announcement",
+      confirmLabel: "Post",
+      fields: [
+        { id: "title", label: "Title", placeholder: "e.g. Assignment deadline extended" },
+        { id: "body", label: "Message", type: "textarea", placeholder: "Write your announcement here..." }
+      ]
+    });
+    if (!data || !data.title) return;
+    const id = `${courseId}_ANN_${Date.now()}`;
+    try {
+      const res = await fetch(`https://fzkpmptsnnkafaaeqhnf.supabase.co/rest/v1/announcements`, {
+        method: "POST",
+        headers: {
+          "apikey": "sb_publishable_Sw15oAmzk8DDUiwOe8mU8A_g-ZHg5EO",
+          "Authorization": "Bearer sb_publishable_Sw15oAmzk8DDUiwOe8mU8A_g-ZHg5EO",
+          "Content-Type": "application/json",
+          "Prefer": "return=representation"
+        },
+        body: JSON.stringify({ id, course_id: courseId, title: data.title, body: data.body })
+      });
+      if (!res.ok) throw new Error(await res.text());
+      showToast("Announcement posted.");
+    } catch (e) { showToast("Failed to post: " + e.message, "error"); }
+  });
+}
+
+// _unsubscribeRealtime proxied via window._tcUnsub for cross-injection access
+
+async function render(code, from, to) {
+  await loadDeps();
+  const course = await _getById("courses", code);
+  if (!course) {
+    document.getElementById("course-root").innerHTML =
+      "<div style='padding:60px;text-align:center;color:#6b7280;'>Course not found: " + code + "</div>";
+    return;
+  }
+  const lectures = await _getLecturesByCourse(code);
+  const idbAssignments = await _getAssignmentsByCourse(code);
+  // Also fetch full assessments (CATs/quizzes) from Supabase — these live in
+  // a separate table and are not synced to IDB, but belong in the same tab.
+  const assessments = await _fetchAssessmentsByCourse(code).catch(() => []);
+  // Merge: map assessments to same shape, deduplicate by id
+  const assessAsMapped = assessments.map(a => ({
+    id: a.id,
+    course_id: a.course_id,
+    type: a.type || "CAT",
+    title: a.title,
+    due: a.due_at || a.due || "",
+    _isFullAssessment: true,   // flag so UI can show "Edit" → assessment.html
+    status: a.status,
+    duration_mins: a.duration_mins
+  }));
+  const idbIds = new Set(idbAssignments.map(a => a.id));
+  const merged = [...idbAssignments, ...assessAsMapped.filter(a => !idbIds.has(a.id))];
+  merged.sort((a, b) => (a.due || "").localeCompare(b.due || ""));
+  const assignments = merged;
+  renderHTML(course, lectures, assignments, from || "#4f6b52", to || "#7f9679");
+
+  // ── Realtime: pick up edits from another tab/session without reloading ──
+  if (window._tcUnsub) { window._tcUnsub(); window._tcUnsub = null; }
+  import("./JS/supabase.js").then(({ subscribeToTable, syncFromSupabase }) => {
+    const refresh = async () => {
+      await syncFromSupabase().catch(() => {});
+      render(code, from, to);
+    };
+    Promise.all([
+      subscribeToTable("lectures", refresh),
+      subscribeToTable("assignments", refresh),
+      subscribeToTable("assessments", refresh)
+    ]).then(unsubs => {
+      window._tcUnsub = () => unsubs.forEach(u => u());
+    }).catch(err => console.warn("[teacher_course] Realtime subscription failed:", err));
+  });
+}
+
+/* ================================================================
+   INIT
+   window.initTeacherCourse(code) — called by teacher-dashboard
+   Standalone — reads sessionStorage or defaults to DCS311.
+   ================================================================ */
+window.initTeacherCourse = function(code, from, to) {
+  render(code, from, to);
+};
+
+// Only auto-run when loaded standalone (not embedded in teacher.html)
+if (!window._embeddedInDashboard) {
+  const activeCode = sessionStorage.getItem("activeCourse") || "DCS311";
+  const activeFrom = sessionStorage.getItem("activeCourseFrom") || "#4f6b52";
+  const activeTo   = sessionStorage.getItem("activeCourseTo")   || "#7f9679";
+  render(activeCode, activeFrom, activeTo);
+}
+
+// Hide standalone nav when embedded
+if (window._embeddedInDashboard || window.frameElement) {
+  var nav = document.getElementById("standaloneNav");
+  var mmenu = document.getElementById("mobileMenu");
+  if (nav) nav.style.display = "none";
+  if (mmenu) mmenu.style.display = "none";
+}
+
+// Hamburger (standalone only)
+var _hBtn = document.getElementById("hamburgerBtn");
+var _mMenu = document.getElementById("mobileMenu");
+if (_hBtn && _mMenu) {
+  _hBtn.addEventListener("click", function(e){ e.stopPropagation(); _hBtn.classList.toggle("open"); _mMenu.classList.toggle("open"); });
+  document.addEventListener("click", function(e){ if(!e.target.closest(".navbar")&&!e.target.closest(".mobile-menu")){ _hBtn.classList.remove("open"); _mMenu.classList.remove("open"); } });
+}
+</script>
+<!-- Session Guard -->
+<script type="module">
+import { requireSession } from "./JS/session.js";
+const session = await requireSession();
+// Role check - students redirected to dashboard
+if (session.role !== "teacher") { window.location.href = "index.html"; }
+</script>
+<!---Service Worker Injection--->
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/sw.js")
+    .then(reg => console.log("SW registered:", reg))
+    .catch(err => console.log("SW failed:", err));
+
+  let _swRefreshed = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (_swRefreshed) return;
+    _swRefreshed = true;
+    window.location.reload();
+  });
+}
+</script>
+</body>
+</html>

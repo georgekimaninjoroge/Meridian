@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Assessments | Meridian</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="manifest" href="/manifest.json">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --surface:rgba(255,255,255,.72);--border:rgba(17,24,39,.06);
+  --text:#111827;--sub:#6b7280;--accent:#4f6b52;
+  --shadow:0 10px 30px rgba(15,23,42,.05);
+  --red:#c24141;--amber:#b7791f;--green:#3f7a54;
+}
+body{font-family:"Inter",sans-serif;background:radial-gradient(circle at top left,#ebe5db 0%,transparent 26%),linear-gradient(to bottom,#faf9f7 0%,#f3f1eb 100%);color:var(--text);min-height:100vh;}
+/* NAV */
+.navbar{position:sticky;top:0;z-index:100;backdrop-filter:blur(18px);background:rgba(250,249,247,.82);border-bottom:1px solid var(--border);}
+.nav-inner{max-width:1200px;margin:auto;height:72px;padding:0 28px;display:flex;align-items:center;gap:16px;}
+.brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--text);}
+.logo{width:40px;height:40px;border-radius:14px;display:grid;place-items:center;}
+.logo img{width:22px;height:auto;}
+.brand-title{font-size:15px;font-weight:700;letter-spacing:-.02em;}
+.back-btn{display:flex;align-items:center;gap:8px;border:none;background:rgba(17,24,39,.06);color:var(--sub);height:38px;padding:0 16px;border-radius:12px;font-size:13px;font-weight:600;cursor:pointer;transition:.15s ease;margin-left:auto;}
+.back-btn:hover{background:rgba(17,24,39,.1);color:var(--text);}
+/* PAGE */
+.page{max-width:1200px;margin:auto;padding:32px 28px 60px;}
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:32px;flex-wrap:wrap;}
+.page-title{font-size:36px;font-weight:800;letter-spacing:-.05em;margin-bottom:6px;}
+.page-sub{font-size:15px;color:var(--sub);}
+.btn{height:44px;padding:0 20px;border-radius:14px;font-size:14px;font-weight:700;cursor:pointer;border:none;transition:.15s ease;display:inline-flex;align-items:center;gap:8px;}
+.btn.primary{background:var(--accent);color:#fff;box-shadow:0 8px 20px rgba(79,107,82,.2);}
+.btn.primary:hover{filter:brightness(1.06);transform:translateY(-1px);}
+.btn.outline{background:transparent;border:1.5px solid rgba(79,107,82,.3);color:var(--accent);}
+.btn.outline:hover{background:rgba(79,107,82,.08);}
+.btn.ghost{background:rgba(17,24,39,.06);color:var(--sub);}
+.btn.ghost:hover{background:rgba(17,24,39,.1);color:var(--text);}
+.btn.danger{background:#c24141;color:#fff;}
+.btn.sm{height:36px;padding:0 14px;font-size:13px;border-radius:11px;}
+/* TABS */
+.tabs{display:flex;gap:4px;background:rgba(17,24,39,.05);padding:4px;border-radius:16px;width:fit-content;margin-bottom:28px;}
+.tab{height:38px;padding:0 18px;border-radius:12px;border:none;background:transparent;font-size:14px;font-weight:600;color:var(--sub);cursor:pointer;transition:.15s ease;}
+.tab.active{background:#fff;color:var(--text);box-shadow:0 2px 8px rgba(15,23,42,.08);}
+/* ASSESSMENT LIST */
+.assessment-grid{display:flex;flex-direction:column;gap:14px;}
+.assessment-card{background:var(--surface);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:24px;padding:22px 24px;display:flex;align-items:center;gap:20px;transition:.2s ease;cursor:pointer;}
+.assessment-card:hover{transform:translateY(-2px);box-shadow:0 16px 40px rgba(15,23,42,.08);}
+.ac-icon{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;font-size:13px;font-weight:800;flex-shrink:0;}
+.ac-icon.cat{background:rgba(183,121,31,.12);color:var(--amber);}
+.ac-icon.hw{background:rgba(79,107,82,.1);color:var(--accent);}
+.ac-icon.quiz{background:rgba(99,102,241,.1);color:#6366f1;}
+.ac-body{flex:1;min-width:0;}
+.ac-title{font-size:17px;font-weight:700;margin-bottom:4px;}
+.ac-meta{font-size:13px;color:var(--sub);display:flex;gap:14px;flex-wrap:wrap;}
+.ac-actions{display:flex;gap:8px;flex-shrink:0;}
+.status-pill{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;}
+.status-pill.draft{background:#f3f4f6;color:#6b7280;}
+.status-pill.open{background:#dcfce7;color:#15803d;}
+.status-pill.closed{background:#fee2e2;color:#b91c1c;}
+.empty-state{text-align:center;padding:60px 20px;color:var(--sub);}
+.empty-state svg{width:48px;height:48px;margin:0 auto 16px;display:block;opacity:.3;}
+.empty-state p{font-size:15px;}
+/* BUILDER PANEL */
+.builder{background:var(--surface);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:28px;padding:28px;margin-bottom:24px;}
+.builder-section{margin-bottom:24px;}
+.builder-section:last-child{margin-bottom:0;}
+.section-label{font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--sub);text-transform:uppercase;margin-bottom:12px;}
+.field-row{display:grid;gap:14px;grid-template-columns:1fr 1fr;}
+.field-row.single{grid-template-columns:1fr;}
+.field-row.triple{grid-template-columns:1fr 1fr 1fr;}
+.field{display:flex;flex-direction:column;gap:6px;}
+.field label{font-size:13px;font-weight:600;color:#374151;}
+.field input,.field select,.field textarea{border:1.5px solid rgba(17,24,39,.1);border-radius:12px;padding:11px 14px;font-size:14px;font-family:inherit;color:var(--text);background:#fff;outline:none;transition:.15s ease;width:100%;}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,107,82,.1);}
+.field textarea{resize:vertical;min-height:72px;line-height:1.6;}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(17,24,39,.06);}
+.toggle-row:last-child{border-bottom:none;}
+.toggle-label{font-size:14px;font-weight:600;}
+.toggle-sub{font-size:12px;color:var(--sub);margin-top:2px;}
+.toggle{position:relative;width:44px;height:24px;flex-shrink:0;}
+.toggle input{opacity:0;width:0;height:0;}
+.toggle-slider{position:absolute;inset:0;background:#d1d5db;border-radius:999px;cursor:pointer;transition:.2s ease;}
+.toggle-slider:before{content:"";position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s ease;box-shadow:0 1px 4px rgba(0,0,0,.15);}
+.toggle input:checked + .toggle-slider{background:var(--accent);}
+.toggle input:checked + .toggle-slider:before{transform:translateX(20px);}
+/* QUESTION BUILDER */
+.questions-list{display:flex;flex-direction:column;gap:14px;}
+.question-card{background:#fff;border:1.5px solid rgba(17,24,39,.08);border-radius:20px;padding:20px;}
+.question-header{display:flex;align-items:center;gap:12px;margin-bottom:16px;}
+.q-num{width:32px;height:32px;border-radius:10px;background:rgba(79,107,82,.1);color:var(--accent);display:grid;place-items:center;font-size:13px;font-weight:800;flex-shrink:0;}
+.q-type-select{border:1.5px solid rgba(17,24,39,.1);border-radius:10px;padding:6px 10px;font-size:13px;font-weight:600;color:var(--text);background:#fff;outline:none;cursor:pointer;}
+.q-delete{margin-left:auto;width:32px;height:32px;border:none;background:rgba(194,65,65,.08);color:var(--red);border-radius:10px;cursor:pointer;display:grid;place-items:center;transition:.15s ease;}
+.q-delete:hover{background:rgba(194,65,65,.15);}
+.q-text{width:100%;border:1.5px solid rgba(17,24,39,.1);border-radius:12px;padding:11px 14px;font-size:14px;font-family:inherit;outline:none;transition:.15s ease;margin-bottom:14px;resize:vertical;min-height:60px;}
+.q-text:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,107,82,.1);}
+/* MCQ options */
+.mcq-options{display:flex;flex-direction:column;gap:8px;}
+.mcq-option{display:flex;align-items:center;gap:10px;}
+.mcq-option input[type="radio"]{width:18px;height:18px;accent-color:var(--accent);flex-shrink:0;cursor:pointer;}
+.mcq-option-input{flex:1;border:1.5px solid rgba(17,24,39,.1);border-radius:10px;padding:9px 12px;font-size:14px;font-family:inherit;outline:none;transition:.15s ease;}
+.mcq-option-input:focus{border-color:var(--accent);}
+.mcq-option-del{width:28px;height:28px;border:none;background:transparent;color:#9ca3af;cursor:pointer;border-radius:8px;display:grid;place-items:center;transition:.15s ease;flex-shrink:0;}
+.mcq-option-del:hover{background:#fee2e2;color:var(--red);}
+.add-option-btn{border:1.5px dashed rgba(79,107,82,.3);background:transparent;color:var(--accent);border-radius:10px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;transition:.15s ease;margin-top:4px;width:100%;}
+.add-option-btn:hover{background:rgba(79,107,82,.05);}
+/* MCQ correct answer hint */
+.mcq-hint{font-size:12px;color:var(--sub);margin-bottom:8px;}
+/* Footer actions */
+.builder-footer{display:flex;gap:10px;justify-content:flex-end;padding-top:20px;border-top:1px solid rgba(17,24,39,.07);margin-top:20px;}
+/* Toast */
+.toast{position:fixed;bottom:28px;right:28px;z-index:99999;padding:14px 20px;border-radius:16px;font-size:14px;font-weight:600;box-shadow:0 12px 32px rgba(0,0,0,.15);opacity:0;transform:translateY(8px);transition:.2s ease;max-width:320px;line-height:1.4;color:#fff;}
+/* Modal overlay */
+.overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px;opacity:0;transition:opacity .2s ease;pointer-events:none;}
+.overlay.visible{opacity:1;pointer-events:all;}
+.modal-card{background:#faf9f7;border-radius:28px;padding:32px;width:100%;max-width:500px;box-shadow:0 32px 80px rgba(15,23,42,.18);transform:translateY(12px) scale(.97);transition:transform .22s ease,opacity .22s ease;opacity:0;}
+.overlay.visible .modal-card{transform:translateY(0) scale(1);opacity:1;}
+.modal-title{font-size:20px;font-weight:800;letter-spacing:-.04em;margin-bottom:20px;}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid rgba(17,24,39,.07);}
+@media(max-width:768px){
+  .page{padding:20px 16px 40px;}
+  .field-row{grid-template-columns:1fr;}
+  .field-row.triple{grid-template-columns:1fr 1fr;}
+  .page-title{font-size:28px;}
+  .ac-actions{flex-wrap:wrap;}
+}
+</style>
+</head>
+<body>
+
+<header class="navbar">
+  <div class="nav-inner">
+    <a class="brand" href="#">
+      <div class="logo"><img src="assets/logo.svg" alt="Meridian"></div>
+      <span class="brand-title">Meridian</span>
+    </a>
+    <button class="back-btn" id="backBtn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Back to Course
+    </button>
+  </div>
+</header>
+
+<div class="page" id="pageRoot">
+  <div style="text-align:center;padding:60px;color:var(--sub);">Loading...</div>
+</div>
+
+<!-- Delete confirm modal -->
+<div class="overlay" id="deleteOverlay">
+  <div class="modal-card">
+    <div class="modal-title">Delete Assessment</div>
+    <p style="color:var(--sub);font-size:14px;line-height:1.6;">This will permanently delete the assessment and all student attempts. This cannot be undone.</p>
+    <div class="modal-footer">
+      <button class="btn ghost" id="deleteCancelBtn">Cancel</button>
+      <button class="btn danger" id="deleteConfirmBtn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { SUPABASE_URL, getConfig } from './JS/config.js';
+import { requireSession } from './JS/session.js';
+
+const qs = new URLSearchParams(location.search);
+const courseId = qs.get('courseId');
+const role = qs.get('role') || 'student';
+const isTeacher = role === 'teacher';
+
+// Set immediately so browser back also restores the course
+if (courseId) sessionStorage.setItem('openCourseOnLoad', courseId);
+
+// ── Auth & config ─────────────────────────────────────────────────────────────
+const session = await requireSession();
+if (!courseId) { location.href = isTeacher ? 'teacher.html' : 'index.html'; }
+
+document.getElementById('backBtn').onclick = () => {
+  location.href = isTeacher ? 'teacher.html' : 'index.html';
+};
+
+let _sbKey = '';
+async function sbKey() {
+  if (_sbKey) return _sbKey;
+  const { getAuth } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+  let idToken = '';
+  try { const u = getAuth().currentUser; if (u) idToken = await u.getIdToken(); } catch {}
+  if (!idToken) try { idToken = JSON.parse(localStorage.getItem('meridian_session')||'{}').idToken||''; } catch {}
+  const cfg = await getConfig(idToken).catch(()=>({supabaseKey:''}));
+  if (cfg.supabaseKey) _sbKey = cfg.supabaseKey;
+  return cfg.supabaseKey;
+}
+
+async function sbHeaders(extra={}) {
+  const k = await sbKey();
+  return { 'apikey': k, 'Authorization': `Bearer ${k}`, 'Content-Type': 'application/json', ...extra };
+}
+
+// ── DB helpers ────────────────────────────────────────────────────────────────
+async function fetchAssessments() {
+  const statusFilter = isTeacher ? '' : '&status=in.(open,closed)';
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/assessments?course_id=eq.${courseId}${statusFilter}&order=created_at.desc`, { headers: await sbHeaders() });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+async function fetchQuestions(assessmentId) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/questions?assessment_id=eq.${assessmentId}&order=position.asc`, { headers: await sbHeaders() });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+async function upsertAssessment(data) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/assessments`, {
+    method: 'POST',
+    headers: await sbHeaders({ 'Prefer': 'resolution=merge-duplicates,return=representation' }),
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return (await res.json())[0];
+}
+
+async function deleteAssessmentDB(id) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/assessments?id=eq.${id}`, { method: 'DELETE', headers: await sbHeaders() });
+  if (!res.ok) throw new Error(await res.text());
+}
+
+async function upsertQuestion(data) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/questions`, {
+    method: 'POST',
+    headers: await sbHeaders({ 'Prefer': 'resolution=merge-duplicates,return=representation' }),
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return (await res.json())[0];
+}
+
+async function deleteQuestionDB(id) {
+  await fetch(`${SUPABASE_URL}/rest/v1/questions?id=eq.${id}`, { method: 'DELETE', headers: await sbHeaders() });
+}
+
+async function updateAssessmentStatus(id, status) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/assessments?id=eq.${id}`, {
+    method: 'PATCH',
+    headers: await sbHeaders({ 'Prefer': 'return=representation' }),
+    body: JSON.stringify({ status })
+  });
+  if (!res.ok) throw new Error(await res.text());
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function toast(msg, type='success') {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.style.background = type==='error' ? '#c24141' : type==='warn' ? '#b7791f' : '#4f6b52';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  requestAnimationFrame(()=>{ t.style.opacity='1'; t.style.transform='translateY(0)'; });
+  setTimeout(()=>{ t.style.opacity='0'; t.style.transform='translateY(8px)'; setTimeout(()=>t.remove(),220); }, 3200);
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function genId(prefix='') { return `${prefix}${Date.now()}_${Math.random().toString(36).slice(2,7)}`; }
+
+function typeIcon(type) {
+  if (type==='CAT') return 'CAT';
+  if (type==='Quiz') return 'QZ';
+  return 'HW';
+}
+function typeClass(type) {
+  if (type==='CAT') return 'cat';
+  if (type==='Quiz') return 'quiz';
+  return 'hw';
+}
+
+function formatDue(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+
+function latenessLabel(due_at) {
+  if (!due_at) return '';
+  const diff = Date.now() - new Date(due_at).getTime();
+  if (diff <= 0) return '';
+  const mins = Math.floor(diff/60000);
+  if (mins < 60) return `${mins}m overdue`;
+  const hrs = Math.floor(mins/60);
+  if (hrs < 24) return `${hrs}h overdue`;
+  return `${Math.floor(hrs/24)}d overdue`;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TEACHER VIEW
+// ══════════════════════════════════════════════════════════════════════════════
+let _assessments = [];
+let _activeTab = 'all';
+let _editingId = null; // null = new, else assessment id
+let _pendingDeleteId = null;
+
+// Delete modal
+const deleteOverlay = document.getElementById('deleteOverlay');
+document.getElementById('deleteCancelBtn').onclick = () => { deleteOverlay.classList.remove('visible'); _pendingDeleteId = null; };
+document.getElementById('deleteConfirmBtn').onclick = async () => {
+  if (!_pendingDeleteId) return;
+  try {
+    await deleteAssessmentDB(_pendingDeleteId);
+    deleteOverlay.classList.remove('visible');
+    _pendingDeleteId = null;
+    toast('Assessment deleted.');
+    await reloadList();
+  } catch(e) { toast('Delete failed: '+e.message,'error'); }
+};
+
+async function reloadList() {
+  _assessments = await fetchAssessments().catch(()=>[]);
+  if (isTeacher) renderTeacher();
+  else renderStudent();
+}
+
+// ── TEACHER RENDER ────────────────────────────────────────────────────────────
+function renderTeacher() {
+  const filtered = _activeTab==='all' ? _assessments : _assessments.filter(a=>a.status===_activeTab);
+  const root = document.getElementById('pageRoot');
+  root.innerHTML = `
+    <div class="page-header">
+      <div>
+        <div class="page-title">Assessments</div>
+        <div class="page-sub">Create and manage CATs, assignments and quizzes for this course.</div>
+      </div>
+      <button class="btn primary" id="newAssessmentBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+        New Assessment
+      </button>
+    </div>
+    <div class="tabs">
+      <button class="tab ${_activeTab==='all'?'active':''}" data-tab="all">All</button>
+      <button class="tab ${_activeTab==='draft'?'active':''}" data-tab="draft">Drafts</button>
+      <button class="tab ${_activeTab==='open'?'active':''}" data-tab="open">Open</button>
+      <button class="tab ${_activeTab==='closed'?'active':''}" data-tab="closed">Closed</button>
+    </div>
+    <div class="assessment-grid" id="assessmentGrid">
+      ${filtered.length === 0 ? `
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2"/></svg>
+          <p>No assessments yet. Create one to get started.</p>
+        </div>` :
+        filtered.map(a => `
+          <div class="assessment-card" data-id="${a.id}">
+            <div class="ac-icon ${typeClass(a.type)}">${typeIcon(a.type)}</div>
+            <div class="ac-body">
+              <div class="ac-title">${a.title}</div>
+              <div class="ac-meta">
+                <span>${a.type}</span>
+                ${a.duration_mins ? `<span>⏱ ${a.duration_mins} min</span>` : '<span>Untimed</span>'}
+                ${a.due_at ? `<span>Due ${formatDue(a.due_at)}</span>` : ''}
+                ${a.max_attempts > 1 ? `<span>${a.max_attempts} attempts</span>` : ''}
+              </div>
+            </div>
+            <span class="status-pill ${a.status}">${a.status}</span>
+            <div class="ac-actions" onclick="event.stopPropagation()">
+              ${a.status==='draft' ? `<button class="btn outline sm" data-action="open" data-id="${a.id}">Publish</button>` : ''}
+              ${a.status==='open' ? `<button class="btn ghost sm" data-action="close" data-id="${a.id}">Close</button>` : ''}
+              ${a.status==='closed' ? `<button class="btn outline sm" data-action="open" data-id="${a.id}">Reopen</button>` : ''}
+              <button class="btn ghost sm" data-action="edit" data-id="${a.id}">Edit</button>
+              <button class="btn danger sm" data-action="delete" data-id="${a.id}">Delete</button>
+            </div>
+          </div>`).join('')
+      }
+    </div>`;
+
+  // Tab clicks
+  root.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+    _activeTab = t.dataset.tab;
+    renderTeacher();
+  }));
+
+  // New button
+  document.getElementById('newAssessmentBtn').onclick = () => openBuilder(null);
+
+  // Card actions
+  root.querySelectorAll('[data-action]').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      const action = btn.dataset.action;
+      if (action === 'edit') { openBuilder(id); return; }
+      if (action === 'delete') { _pendingDeleteId = id; deleteOverlay.classList.add('visible'); return; }
+      if (action === 'open') { await updateAssessmentStatus(id,'open'); toast('Assessment published.'); await reloadList(); return; }
+      if (action === 'close') { await updateAssessmentStatus(id,'closed'); toast('Assessment closed.'); await reloadList(); return; }
+    });
+  });
+}
+
+// ── BUILDER ───────────────────────────────────────────────────────────────────
+let _questions = []; // [{id, text, type, options:[{label,value}], correct_answer, isNew}]
+
+function openBuilder(assessmentId) {
+  _editingId = assessmentId;
+  const a = assessmentId ? _assessments.find(x=>x.id===assessmentId) : null;
+  renderBuilder(a);
+}
+
+async function renderBuilder(a) {
+  if (a) {
+    _questions = await fetchQuestions(a.id).catch(()=>[]);
+    // normalize
+    _questions = _questions.map(q=>({...q, options: q.options||[]}));
+  } else {
+    _questions = [];
+  }
+
+  const root = document.getElementById('pageRoot');
+  root.innerHTML = `
+    <div class="page-header">
+      <div>
+        <div class="page-title">${a ? 'Edit Assessment' : 'New Assessment'}</div>
+        <div class="page-sub">${a ? `Editing: ${a.title}` : 'Fill in details and add questions below.'}</div>
+      </div>
+      <button class="btn ghost" id="cancelBuilderBtn">Cancel</button>
+    </div>
+
+    <div class="builder">
+      <div class="builder-section">
+        <div class="section-label">Basic Info</div>
+        <div class="field-row">
+          <div class="field">
+            <label>Title</label>
+            <input id="f_title" type="text" placeholder="e.g. Week 5 CAT — Data Structures" value="${a?.title||''}">
+          </div>
+          <div class="field">
+            <label>Type</label>
+            <select id="f_type">
+              <option value="CAT" ${a?.type==='CAT'?'selected':''}>CAT</option>
+              <option value="HW" ${a?.type==='HW'?'selected':''}>Assignment (HW)</option>
+              <option value="Quiz" ${a?.type==='Quiz'?'selected':''}>Quiz</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="builder-section">
+        <div class="section-label">Timing & Attempts</div>
+        <div class="field-row triple">
+          <div class="field">
+            <label>Timer (minutes) — leave blank for untimed</label>
+            <input id="f_duration" type="number" min="1" placeholder="e.g. 45" value="${a?.duration_mins||''}">
+          </div>
+          <div class="field">
+            <label>Due Date & Time</label>
+            <input id="f_due" type="datetime-local" value="${a?.due_at ? new Date(a.due_at).toISOString().slice(0,16) : ''}">
+          </div>
+          <div class="field">
+            <label>Max Attempts</label>
+            <input id="f_attempts" type="number" min="1" value="${a?.max_attempts||1}">
+          </div>
+        </div>
+      </div>
+
+      <div class="builder-section">
+        <div class="section-label">Options</div>
+        <div class="toggle-row">
+          <div><div class="toggle-label">Allow Late Submissions</div><div class="toggle-sub">Students can submit after the due date. Shows overdue badge.</div></div>
+          <label class="toggle"><input type="checkbox" id="f_late" ${a?.allow_late?'checked':''}><span class="toggle-slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div><div class="toggle-label">Randomize Question Order</div><div class="toggle-sub">Each student gets questions in a different order.</div></div>
+          <label class="toggle"><input type="checkbox" id="f_random" ${a?.randomize_questions!==false?'checked':''}><span class="toggle-slider"></span></label>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div style="font-size:20px;font-weight:800;letter-spacing:-.04em;">Questions <span style="font-size:14px;font-weight:500;color:var(--sub);" id="qCount">(${_questions.length})</span></div>
+      <button class="btn outline" id="addQuestionBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+        Add Question
+      </button>
+    </div>
+
+    <div class="questions-list" id="questionsList"></div>
+
+    <div class="builder-footer">
+      <button class="btn ghost" id="saveDraftBtn">Save as Draft</button>
+      <button class="btn primary" id="savePublishBtn">${a?.status==='open' ? 'Save Changes' : 'Save & Publish'}</button>
+    </div>`;
+
+  document.getElementById('cancelBuilderBtn').onclick = () => { reloadList(); };
+  document.getElementById('addQuestionBtn').onclick = () => addQuestion();
+  document.getElementById('saveDraftBtn').onclick = () => saveAssessment('draft');
+  document.getElementById('savePublishBtn').onclick = () => saveAssessment('open');
+
+  renderQuestions();
+}
+
+function renderQuestions() {
+  const list = document.getElementById('questionsList');
+  if (!list) return;
+  if (_questions.length === 0) {
+    list.innerHTML = `<div class="empty-state" style="padding:30px 0;"><p>No questions yet. Click "Add Question" to start.</p></div>`;
+    return;
+  }
+  list.innerHTML = _questions.map((q,i) => buildQuestionCard(q,i)).join('');
+  document.getElementById('qCount').textContent = `(${_questions.length})`;
+
+  // Wire events on each question card
+  _questions.forEach((q,i) => {
+    const card = document.getElementById(`qcard_${q.id}`);
+    if (!card) return;
+
+    card.querySelector('.q-text').addEventListener('input', e => { _questions[i].text = e.target.value; });
+    card.querySelector('.q-type-select').addEventListener('change', e => {
+      _questions[i].type = e.target.value;
+      _questions[i].options = e.target.value==='mcq' ? [{label:'A',value:''},{label:'B',value:''}] : [];
+      _questions[i].correct_answer = '';
+      renderQuestions();
+    });
+    card.querySelector('.q-delete').addEventListener('click', () => {
+      _questions.splice(i,1);
+      renderQuestions();
+    });
+
+    if (q.type === 'mcq') {
+      card.querySelectorAll('.mcq-option-input').forEach((inp,oi) => {
+        inp.addEventListener('input', e => { _questions[i].options[oi].value = e.target.value; });
+      });
+      card.querySelectorAll('.mcq-option input[type="radio"]').forEach((radio,oi) => {
+        radio.addEventListener('change', () => { _questions[i].correct_answer = String(oi); });
+      });
+      card.querySelectorAll('.mcq-option-del').forEach((btn,oi) => {
+        btn.addEventListener('click', () => {
+          _questions[i].options.splice(oi,1);
+          if (_questions[i].correct_answer === String(oi)) _questions[i].correct_answer = '';
+          renderQuestions();
+        });
+      });
+      card.querySelector('.add-option-btn')?.addEventListener('click', () => {
+        const labels = ['A','B','C','D','E','F'];
+        _questions[i].options.push({label: labels[_questions[i].options.length]||'', value:''});
+        renderQuestions();
+      });
+    }
+  });
+}
+
+function buildQuestionCard(q, i) {
+  const mcqOptions = q.type === 'mcq' ? `
+    <div class="mcq-hint">Select the radio button next to the correct answer for autograding.</div>
+    <div class="mcq-options">
+      ${(q.options||[]).map((opt,oi)=>`
+        <div class="mcq-option">
+          <input type="radio" name="correct_${q.id}" ${q.correct_answer===String(oi)?'checked':''}>
+          <input class="mcq-option-input" type="text" placeholder="Option ${opt.label||oi+1}" value="${opt.value||''}">
+          <button class="mcq-option-del" title="Remove option">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>`).join('')}
+    </div>
+    <button class="add-option-btn">+ Add Option</button>` : '';
+
+  const writtenNote = q.type==='written' ? `<div style="font-size:12px;color:var(--sub);padding:8px 12px;background:#f9fafb;border-radius:10px;">Students will type their answer in a text box. Requires manual grading.</div>` : '';
+  const fileNote = q.type==='file' ? `<div style="font-size:12px;color:var(--sub);padding:8px 12px;background:#f9fafb;border-radius:10px;">Students will upload a file. Requires manual grading.</div>` : '';
+
+  return `
+    <div class="question-card" id="qcard_${q.id}">
+      <div class="question-header">
+        <div class="q-num">${i+1}</div>
+        <select class="q-type-select">
+          <option value="mcq" ${q.type==='mcq'?'selected':''}>Multiple Choice</option>
+          <option value="written" ${q.type==='written'?'selected':''}>Written Answer</option>
+          <option value="file" ${q.type==='file'?'selected':''}>File Upload</option>
+        </select>
+        <button class="q-delete" title="Delete question">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        </button>
+      </div>
+      <textarea class="q-text" placeholder="Enter your question here...">${q.text||''}</textarea>
+      ${mcqOptions}
+      ${writtenNote}
+      ${fileNote}
+    </div>`;
+}
+
+function addQuestion() {
+  _questions.push({ id: genId('q_'), text:'', type:'mcq', options:[{label:'A',value:''},{label:'B',value:''}], correct_answer:'', isNew:true });
+  renderQuestions();
+  // scroll to new card
+  setTimeout(()=>{ const cards=document.querySelectorAll('.question-card'); cards[cards.length-1]?.scrollIntoView({behavior:'smooth',block:'nearest'}); },50);
+}
+
+async function saveAssessment(status) {
+  const title = document.getElementById('f_title')?.value?.trim();
+  if (!title) { toast('Title is required.','warn'); return; }
+  const type = document.getElementById('f_type')?.value;
+  const duration_mins = parseInt(document.getElementById('f_duration')?.value)||null;
+  const due_raw = document.getElementById('f_due')?.value;
+  const due_at = due_raw ? new Date(due_raw).toISOString() : null;
+  const max_attempts = parseInt(document.getElementById('f_attempts')?.value)||1;
+  const allow_late = document.getElementById('f_late')?.checked||false;
+  const randomize_questions = document.getElementById('f_random')?.checked!==false;
+
+  const id = _editingId || genId('asmnt_');
+  try {
+    const saved = await upsertAssessment({ id, course_id: courseId, type, title, status, duration_mins, due_at, max_attempts, allow_late, randomize_questions });
+
+    // Save questions
+    for (let i=0; i<_questions.length; i++) {
+      const q = _questions[i];
+      await upsertQuestion({
+        id: q.id,
+        assessment_id: id,
+        position: i,
+        text: q.text,
+        type: q.type,
+        options: q.type==='mcq' ? q.options : null,
+        correct_answer: q.type==='mcq' ? q.correct_answer : null
+      });
+    }
+
+    toast(status==='open' ? 'Assessment published!' : 'Draft saved.');
+    _editingId = null;
+    await reloadList();
+  } catch(e) { toast('Save failed: '+e.message,'error'); }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// STUDENT VIEW
+// ══════════════════════════════════════════════════════════════════════════════
+function renderStudent() {
+  const open = _assessments.filter(a=>a.status==='open');
+  const closed = _assessments.filter(a=>a.status==='closed');
+  const root = document.getElementById('pageRoot');
+
+  const renderCards = (list) => list.map(a => {
+    const late = latenessLabel(a.due_at);
+    return `
+      <div class="assessment-card" data-id="${a.id}" onclick="window.location.href='attempt.html?assessmentId=${a.id}'">
+        <div class="ac-icon ${typeClass(a.type)}">${typeIcon(a.type)}</div>
+        <div class="ac-body">
+          <div class="ac-title">${a.title}</div>
+          <div class="ac-meta">
+            <span>${a.type}</span>
+            ${a.duration_mins ? `<span>⏱ ${a.duration_mins} min</span>` : ''}
+            ${a.due_at ? `<span>Due ${formatDue(a.due_at)}</span>` : ''}
+            ${late ? `<span style="color:var(--red);font-weight:700;">⚠ ${late}</span>` : ''}
+            ${a.allow_late && late ? `<span style="color:var(--amber);">Late submissions allowed</span>` : ''}
+          </div>
+        </div>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+      </div>`;
+  }).join('');
+
+  root.innerHTML = `
+    <div class="page-header">
+      <div>
+        <div class="page-title">Assessments</div>
+        <div class="page-sub">Your CATs, assignments and quizzes for this course.</div>
+      </div>
+    </div>
+    ${open.length > 0 ? `
+      <div style="font-size:13px;font-weight:700;letter-spacing:.08em;color:var(--sub);text-transform:uppercase;margin-bottom:12px;">Open</div>
+      <div class="assessment-grid" style="margin-bottom:28px;">${renderCards(open)}</div>` : ''}
+    ${closed.length > 0 ? `
+      <div style="font-size:13px;font-weight:700;letter-spacing:.08em;color:var(--sub);text-transform:uppercase;margin-bottom:12px;">Closed</div>
+      <div class="assessment-grid">${renderCards(closed)}</div>` : ''}
+    ${open.length===0 && closed.length===0 ? `
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2"/></svg>
+        <p>No assessments available yet.</p>
+      </div>` : ''}`;
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+await reloadList();
+// If arriving from teacher_course "Edit →" button, auto-open that assessment
+const _editId = qs.get('editId');
+if (_editId && isTeacher) {
+  const _target = _assessments.find(a => a.id === _editId);
+  if (_target) openBuilder(_editId);
+}
+</script>
+</body>
+</html>
