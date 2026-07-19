@@ -28,7 +28,7 @@ UI ──────────────────────► Cloud
 Meridian does this:
 
 ```
-UI ──► IndexedDB ◄──────── Supabase (sync only, when online)
+UI ──► IndexedDB ◄──────── Cloud (sync only, when online)
            ▲
     source of truth
     on every read
