@@ -561,7 +561,13 @@ function setNavActive(btn){
 }
 window.setNavActive = setNavActive;
 
-document.getElementById("navCourses").addEventListener("click",()=>{ setNavActive(document.getElementById("navCourses")); scrollToSection("section-courses"); });
+document.getElementById("navCourses").addEventListener("click",()=>{
+  setNavActive(document.getElementById("navCourses"));
+  if (pageCourse.style.display !== "none" && pageCourse.style.display !== "") {
+    showDashboard();
+  }
+  setTimeout(() => scrollToSection("section-courses"), 50);
+});
 document.getElementById("mobileNavCourses").addEventListener("click",()=>{ scrollToSection("section-courses"); });
 
 /* MODAL */
@@ -724,13 +730,29 @@ const BANNER_PALETTE = [
   { from:"#6b6840", to:"#9c9e72" },
 ];
 
+let _cachedCourseTeachers = null;
+
 async function renderTeacherCourseGrid() {
   const { getAll, getLecturesByCourse, getAssignmentsByCourse } = await import("./JS/db.js");
   const { fetchCourseTeachers, fetchEnrollments } = await import("./JS/supabase.js");
   const enrollments_ = await fetchEnrollments().catch(() => []);
   const allCourses = await getAll("courses");
-  const assignments_ = await fetchCourseTeachers().catch(() => []);
-  const myCourseIds = new Set(assignments_.filter(ct => ct.teacher_id === session.uid).map(ct => ct.course_id));
+
+  // Fetch course_teachers from network; fall back to last good result
+  let assignments_ = _cachedCourseTeachers;
+  try {
+    const fresh = await fetchCourseTeachers();
+    if (fresh && fresh.length >= 0) {
+      _cachedCourseTeachers = fresh;
+      assignments_ = fresh;
+    }
+  } catch(e) {
+    console.warn("[teacher] fetchCourseTeachers failed, using cache:", e);
+  }
+
+  const myCourseIds = assignments_
+    ? new Set(assignments_.filter(ct => ct.teacher_id === session.uid).map(ct => ct.course_id))
+    : new Set(allCourses.map(c => c.id)); // last resort: show all courses
   const courses = allCourses.filter(c => myCourseIds.has(c.id));
   const grid = document.querySelector(".course-grid");
   if (!grid) return;
@@ -792,6 +814,8 @@ function showDashboard() {
   window.setNavActive(document.getElementById("navDashboard"));
   window.scrollTo(0, 0);
   history.pushState({ page: "dashboard" }, "", "");
+  // Re-render grid so course cards are always fresh on return
+  renderTeacherCourseGrid().catch(() => {});
 }
 
 async function openCourse(idx) {
@@ -818,6 +842,10 @@ async function openCourse(idx) {
     document.head.appendChild(s);
   }
 
+  // Cancel any active realtime subscription from previous course open
+  // (stored on window so it survives script re-injection)
+  if (typeof window._tcUnsub === "function") { window._tcUnsub(); window._tcUnsub = null; }
+
   const root = doc2.getElementById("course-root");
   if (root) {
     pageCourse.innerHTML = "";
@@ -829,10 +857,16 @@ async function openCourse(idx) {
 
   // Always re-execute course script so initTeacherCourse picks up latest data
   window.initTeacherCourse = null;
+  // Remove stale injected script — prevents duplicate listeners on re-open
+  const _oldScript = document.getElementById("teacher-course-injected-script");
+  if (_oldScript) _oldScript.remove();
   const scriptEl = doc2.querySelector("script");
   if (scriptEl) {
     const s = document.createElement("script");
-    s.textContent = scriptEl.textContent;
+    s.id = "teacher-course-injected-script";
+    // Wrap in IIFE — prevents "already declared" SyntaxError when re-injected
+    // (top-level let/const in inline scripts pollute global scope across re-injections)
+    s.textContent = ";(function(){" + scriptEl.textContent + "})();";
     document.body.appendChild(s);
   }
 
@@ -854,14 +888,33 @@ await renderTeacherCourseGrid();
 // ── Realtime: pick up assignment/course changes without needing a reload ──
 // If an admin assigns/unassigns this teacher, or a course is added/edited,
 // the dashboard updates live instead of requiring a hard refresh.
-import("./JS/supabase.js").then(({ subscribeToTable }) => {
-  subscribeToTable("course_teachers", () => renderTeacherCourseGrid())
+import("./JS/supabase.js").then(({ subscribeToTable, syncTable }) => {
+  const refresh = (table) => async () => {
+    await syncTable(table);
+    await renderTeacherCourseGrid();
+  };
+  subscribeToTable("course_teachers", refresh("courses"))
     .catch(err => console.warn("[teacher] Realtime course_teachers failed:", err));
-  subscribeToTable("courses", () => renderTeacherCourseGrid())
+  subscribeToTable("courses", refresh("courses"))
     .catch(err => console.warn("[teacher] Realtime courses failed:", err));
 });
 
 document.getElementById("navDashboard").addEventListener("click", showDashboard);
+
+// Resume course if coming back from live.html or assessment.html
+const _resumeCode = sessionStorage.getItem('openCourseOnLoad');
+if (_resumeCode) {
+  sessionStorage.removeItem('openCourseOnLoad');
+  let _idx = COURSE_CODES.findIndex(c => c.code === _resumeCode);
+  if (_idx !== -1) {
+    openCourse(_idx);
+  } else {
+    renderTeacherCourseGrid().then(() => {
+      const _idx2 = COURSE_CODES.findIndex(c => c.code === _resumeCode);
+      if (_idx2 !== -1) openCourse(_idx2);
+    }).catch(() => {});
+  }
+}
 </script>
 <!---Service Worker Injection--->
 <script>

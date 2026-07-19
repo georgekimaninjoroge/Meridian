@@ -39,6 +39,7 @@ body{
 /* WRAPPER */
 .auth{
   width:100%; max-width:1320px;
+  max-height:calc(100vh - 56px);
   display:grid; grid-template-columns:1.12fr .88fr;
   background:rgba(255,255,255,.55);
   backdrop-filter:blur(24px);
@@ -50,7 +51,7 @@ body{
 }
 
 /* LEFT */
-.left{ position:relative; min-height:860px; overflow:hidden; }
+.left{ position:relative; min-height:min(860px,calc(100vh - 56px)); overflow:hidden; }
 .left img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
 .overlay{
   position:absolute; inset:0;
@@ -83,6 +84,7 @@ body{
   display:flex; flex-direction:column;
   align-items:center; justify-content:center;
   padding:50px;
+  overflow-y:auto; min-height:0;
 }
 .mobile-brand{ display:none; }
 
@@ -230,7 +232,7 @@ label{ display:block; font-size:13px; font-weight:600; color:#374151; margin-bot
     border-radius:32px; background:rgba(255,255,255,.72);
     backdrop-filter:blur(20px); box-shadow:0 20px 60px rgba(15,23,42,.06);
   }
-  .right{ width:100%; min-height:100vh; padding:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .right{ width:100%; padding:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
   .left{ display:none; }
 }
 @media(max-width:480px){
@@ -324,7 +326,7 @@ label{ display:block; font-size:13px; font-weight:600; color:#374151; margin-bot
 
           <div class="row">
             <span style="font-size:12px;color:var(--sub)">You're logged in until you sign out</span>
-            <a href="#" class="link">Forgot Password?</a>
+            <a href="#" class="link" id="forgotPasswordLink">Forgot Password?</a>
           </div>
 
           <button class="primary" id="loginSubmit">
@@ -409,8 +411,8 @@ label{ display:block; font-size:13px; font-weight:600; color:#374151; margin-bot
 
 // ─── PASTE YOUR FIREBASE CONFIG HERE ───────────────────────────────────────
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc, getDocs, collection, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const { getFirebaseConfig } = await import("./JS/config.js");
 const firebaseConfig = await getFirebaseConfig();
@@ -517,6 +519,48 @@ function routeByRole(role){
 }
 
 // ─── LOGIN ───────────────────────────────────────────────────────────────────
+// ─── FORGOT PASSWORD ─────────────────────────────────────────────────────────
+const forgotModal = document.getElementById("forgotModal");
+document.getElementById("forgotPasswordLink").addEventListener("click", e => {
+  e.preventDefault();
+  document.getElementById("forgotEmail").value = "";
+  forgotModal.style.display = "flex";
+  document.getElementById("forgotMsg").textContent = "";
+  document.getElementById("forgotEmail").focus();
+});
+document.getElementById("forgotModalClose").addEventListener("click", () => { forgotModal.style.display = "none"; });
+forgotModal.addEventListener("click", e => { if (e.target === forgotModal) forgotModal.style.display = "none"; });
+
+document.getElementById("forgotSubmit").addEventListener("click", async () => {
+  const portalId = document.getElementById("forgotEmail").value.trim();
+  const msgEl = document.getElementById("forgotMsg");
+  const btn = document.getElementById("forgotSubmit");
+  msgEl.style.color = "#6b7280";
+  msgEl.textContent = "";
+
+  if (!portalId || !portalId.includes("@")) { msgEl.style.color="#c24141"; msgEl.textContent = "Please enter a valid email address."; return; }
+
+  btn.disabled = true;
+  btn.textContent = "Sending…";
+  try {
+    await sendPasswordResetEmail(auth, portalId);
+    msgEl.style.color = "#3f7a54";
+    msgEl.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Reset link sent to your email.</span>';
+    btn.textContent = "Sent!";
+    setTimeout(() => { forgotModal.style.display = "none"; btn.textContent = "Send Reset Link"; btn.disabled = false; }, 3000);
+  } catch (err) {
+    const map = {
+      "auth/user-not-found": "No account found for this Portal ID.",
+      "auth/too-many-requests": "Too many attempts. Try again later.",
+      "auth/invalid-email": "Invalid email on file. Contact your admin.",
+    };
+    msgEl.style.color = "#c24141";
+    msgEl.textContent = map[err.code] || err.message;
+    btn.textContent = "Send Reset Link";
+    btn.disabled = false;
+  }
+});
+
 document.getElementById("loginSubmit").addEventListener("click", async ()=>{
   const portalId = document.getElementById("loginPortalId").value.trim();
   const password = document.getElementById("loginPassword").value;
@@ -534,7 +578,17 @@ document.getElementById("loginSubmit").addEventListener("click", async ()=>{
 
   setLoading(btn, true);
   try{
-    const email = toEmail(portalId);
+    // Resolve portalId → real email via Firestore, then sign in
+    let email;
+    try {
+      const q = query(collection(db, "users"), where("portalId", "==", portalId));
+      const snap2 = await getDocs(q);
+      if (!snap2.empty) {
+        email = snap2.docs[0].data().email;
+      }
+    } catch (_) {}
+    // Fallback: synthetic email (legacy accounts before this fix)
+    if (!email) email = toEmail(portalId);
     const cred  = await signInWithEmailAndPassword(auth, email, password);
 
     // Fetch role from Firestore (first login only — then cached in localStorage)
@@ -611,10 +665,10 @@ document.getElementById("signupSubmit").addEventListener("click", async ()=>{
 
   setLoading(btn, true);
   try{
-    const syntheticEmail = toEmail(portalId);
-    console.log("Creating auth user:", syntheticEmail);
+    // Use real email for Firebase Auth so password reset emails are deliverable
+    console.log("Creating auth user with real email:", email);
 
-    const cred = await createUserWithEmailAndPassword(auth, syntheticEmail, password);
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
     console.log("Auth user created:", cred.user.uid);
 
     // Write user doc to Firestore
@@ -718,5 +772,24 @@ if ("serviceWorker" in navigator) {
 }
 </script>
 
+<!-- FORGOT PASSWORD MODAL -->
+<div id="forgotModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(6px);z-index:999;align-items:center;justify-content:center;">
+  <div style="background:white;border-radius:28px;width:min(420px,92vw);padding:32px;box-shadow:0 40px 80px rgba(0,0,0,.18);animation:forgotIn .25s ease;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div style="font-size:20px;font-weight:800;letter-spacing:-.04em;">Reset Password</div>
+      <button id="forgotModalClose" style="width:34px;height:34px;border:none;border-radius:10px;background:#f4f1ea;cursor:pointer;font-size:16px;color:#6b7280;">&#x2715;</button>
+    </div>
+    <div style="font-size:14px;color:#6b7280;margin-bottom:22px;line-height:1.6;">Enter the email address linked to your account. We'll send you a reset link.</div>
+    <div style="margin-bottom:14px;">
+      <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;">Email Address</label>
+      <input id="forgotEmail" type="email" placeholder="e.g. yourname@gmail.com" style="width:100%;height:52px;border:none;border-radius:16px;background:#f5f3ee;padding:0 18px;font-size:15px;outline:none;font-family:'Inter',sans-serif;transition:.25s ease;" onfocus="this.style.background='white';this.style.boxShadow='0 0 0 2px rgba(79,107,82,.14)'" onblur="this.style.background='#f5f3ee';this.style.boxShadow='none'">
+    </div>
+    <div id="forgotMsg" style="font-size:13px;margin-bottom:14px;min-height:18px;"></div>
+    <button id="forgotSubmit" style="width:100%;height:52px;border:none;border-radius:16px;background:#4f6b52;color:white;font-size:15px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:.25s ease;" onmouseover="this.style.filter='brightness(1.08)'" onmouseout="this.style.filter='none'">Send Reset Link</button>
+  </div>
+</div>
+<style>
+@keyframes forgotIn { from { opacity:0; transform:translateY(16px) scale(.97); } to { opacity:1; transform:none; } }
+</style>
 </body>
 </html>

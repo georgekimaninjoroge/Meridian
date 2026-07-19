@@ -990,36 +990,29 @@ const video = document.getElementById('lecturePlayer');
 const empty = document.getElementById('videoEmpty');
 
 window._player = null;
-const player = new Plyr(video, {
-  iconUrl: 'dist/plyr/plyr.svg',
-  controls: [
-    'play-large','play','progress',
-    'current-time','duration',
-    'mute','volume','settings','fullscreen'
-  ],
-  settings: ['speed'],
-  speed: { selected:1, options:[0.75,1,1.25,1.5,2] },
-  keyboard: { focused:true, global:false },
-  tooltips: { controls:true, seek:true },
-});
-window._player = player;
 
-window.loadVideo = function loadVideo(src){
-  if(!src){ empty.style.display = 'flex'; return; }
+// mountVideo: registers SW token + mounts Plyr via virtual video filesystem.
+// assetId = lecture.id UUID (stored in lectureRecord.videoUrl after new upload system).
+window.mountVideo = async function mountVideo(assetId) {
+  if (!assetId) { empty.style.display = 'flex'; return; }
   empty.style.display = 'none';
-  player.source = {
-    type: 'video',
-    sources: [{ src, type:'video/mp4' }]
-  };
-}
+  try {
+    const { mountVideoPlayer } = await import('./JS/S3.js');
+    // Pass the video element directly (already in DOM) so Plyr wraps it
+    const player = await mountVideoPlayer(assetId, video.parentElement);
+    window._player = player;
+  } catch (e) {
+    console.error('[media] mountVideo failed:', e);
+    empty.style.display = 'flex';
+  }
+};
 
 // Real video is loaded once the lecture record is fetched, in the
-// module script below — see loadVideo(videoUrl) call near the bottom.
+// module script below mounts the actual video once lectureRecord is fetched.
 
 /* ── OFFLINE DOWNLOAD + PLAYBACK ────────────────────────────────────────── */
 </script>
 <script type="module">
-import { ChunkedVideoDownloader } from "./JS/offline-media.js";
 import { CacheJanitor } from "./JS/cache-janitor.js";
 
 const fromCode  = new URLSearchParams(window.location.search).get("from") || "DCS311";
@@ -1043,11 +1036,31 @@ if (!lectureRecord) {
     console.warn("[media] Fallback sync failed:", err);
   }
 }
-const videoUrl = lectureRecord?.videoUrl || null;
-if (!videoUrl) {
+// videoUrl now stores the assetId (lecture UUID) — not a signed URL
+const assetId = lectureRecord?.videoUrl || null;
+if (!assetId) {
   console.warn("[media] No video uploaded yet for", lectureId);
 }
-window.loadVideo(videoUrl); // shows the "no video" empty state if null
+// Wait for SW controller to be active before mounting (needed after first install)
+async function waitForSWController(timeout = 4000) {
+  if (navigator.serviceWorker.controller) return;
+  await new Promise((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error('SW timeout')), timeout);
+    navigator.serviceWorker.addEventListener('controllerchange', () => { clearTimeout(t); resolve(); }, { once: true });
+  });
+}
+try {
+  await waitForSWController();
+} catch(e) {
+  // SW installed but not yet controller — reload once to activate it
+  if (!sessionStorage.getItem('sw_reload_done')) {
+    sessionStorage.setItem('sw_reload_done', '1');
+    location.reload();
+  } else {
+    console.warn('[media] SW not ready after reload:', e);
+  }
+}
+window.mountVideo(assetId); // SW-backed streaming; shows empty state if null
 
 // Expose lectureId globally for progress interval
 window._lectureId = lectureId;
@@ -1067,57 +1080,81 @@ const progressFill     = document.getElementById("downloadProgressFill");
 const progressText     = document.getElementById("downloadProgressText");
 const offlineBadge     = document.getElementById("offlineBadge");
 
-if (videoUrl) {
-  const dl = new ChunkedVideoDownloader(lectureId, videoUrl);
+if (assetId) {
+  // totalChunks unknown at this point — MediaDownloader.getStatus() checks IDB
+  // For already-cached: assemble blob and play offline (no SW needed)
+  // For not-cached: download all chunks into IDB in background while SW streams
+  const { MediaDownloader } = await import("./JS/S3.js");
+
+  // Fetch totalChunks from storage_assets via proxy header on first chunk,
+  // but we can read it from IDB download_metadata if already cached
+  const meta = await MediaDownloader.getStatus(assetId);
 
   function markCached() {
     downloadProgress.style.display = "none";
     offlineBadge.style.display     = "";
   }
 
-  // Already fully cached → swap to blob immediately, no download needed
-  const existing = await dl.getPlayableBlob();
-  if (existing) {
-    window.loadVideo(existing);
+  if (meta.status === "complete") {
+    // Already fully cached — play from blob (truly offline, no SW fetch needed)
+    const dl       = new MediaDownloader(assetId, { type: "video" });
+    const blobUrl  = await dl.getPlayableBlob();
+    if (blobUrl) {
+      // Replace SW-streamed src with local blob
+      if (window._player) window._player.source = { type: "video", sources: [{ src: blobUrl, type: "video/mp4" }] };
+    }
     markCached();
-    CacheJanitor.touch(lectureId);
-    // Restore video position
+    CacheJanitor.touch(assetId);
     if (window._restoredProgress?.videoTime > 5) {
-      window._player?.once('ready', () => {
+      window._player?.once("ready", () => {
         window._player.currentTime = window._restoredProgress.videoTime;
       });
     }
   } else {
-    // Not cached → show progress bar and auto-start
+    // Not cached → SW streams while we download chunks into IDB in background
     downloadProgress.style.display = "";
+
+    // Need totalChunks — fetch from storage_assets table via a quick proxy call
+    // The proxy returns X-Total-Chunks on every chunk response
+    // We do a single chunk fetch just to learn totalChunks, then start downloader
+    const { getById: _getById2 } = await import("./JS/db.js");
+    const { getConfig } = await import("./JS/config.js");
+    const { getAuth }   = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js");
+    const token         = await getAuth().currentUser?.getIdToken();
+    const { supabaseKey } = await getConfig(token).catch(() => ({ supabaseKey: "" }));
+    const proxyBase     = (await import("./JS/config.js")).SUPABASE_URL + "/functions/v1/media-proxy";
+    const res           = await fetch(`${proxyBase}?assetId=${encodeURIComponent(assetId)}&chunk=0`, {
+      headers: { Authorization: `Bearer ${token}`, apikey: supabaseKey },
+    });
+    const totalChunks = parseInt(res.headers.get("X-Total-Chunks") || "1");
+
+    const dl = new MediaDownloader(assetId, { type: "video", totalChunks });
 
     dl.onProgress = (pct) => {
       progressFill.style.width = pct + "%";
       progressText.textContent = "Caching offline… " + pct + "%";
     };
 
-    dl.onComplete = (blobUrl) => {
-      window.loadVideo(blobUrl);
+    dl.onComplete = async (blobUrl) => {
+      // Swap SW stream for local blob now that it's fully cached
+      if (window._player) window._player.source = { type: "video", sources: [{ src: blobUrl, type: "video/mp4" }] };
       markCached();
-      CacheJanitor.touch(lectureId);
+      CacheJanitor.touch(assetId);
       if (window._restoredProgress?.videoTime > 5) {
-        window._player?.once('ready', () => {
+        window._player?.once("ready", () => {
           window._player.currentTime = window._restoredProgress.videoTime;
         });
       }
     };
 
     dl.onError = (err) => {
-      // Silent fail — video still plays from service worker cache
       downloadProgress.style.display = "none";
-      console.warn("[media] Auto-cache failed (playing from network):", err);
+      console.warn("[media] Auto-cache failed (SW stream continues):", err);
     };
 
-    dl.start(); // fire and forget — don't await, let video play while caching
+    dl.start(); // fire and forget — SW already streaming above
   }
 } else {
-  // No video uploaded for this lecture yet — skip offline caching entirely,
-  // the empty state from loadVideo(null) above already covers the UI.
   downloadProgress.style.display = "none";
 }
 </script>
@@ -1153,11 +1190,14 @@ document.addEventListener('mousemove', (e) => {
 const backBtn      = document.getElementById('backBtn');
 const _backFromCode = new URLSearchParams(window.location.search).get('from');
 
+// Set immediately on load so browser back button ALSO restores the course
+if (_backFromCode) {
+  sessionStorage.setItem('activeCourse', _backFromCode);
+  sessionStorage.setItem('openCourseOnLoad', _backFromCode);
+}
+
 backBtn.addEventListener('click', () => {
-  if(_backFromCode){
-    sessionStorage.setItem('activeCourse', _backFromCode);
-    sessionStorage.setItem('openCourseOnLoad', _backFromCode);
-  }
+  // openCourseOnLoad already set above; just navigate
   window.location.href = 'index.html';
 });
 </script>

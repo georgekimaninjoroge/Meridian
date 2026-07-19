@@ -415,6 +415,10 @@ const qs = new URLSearchParams(location.search);
 const lectureId = qs.get('lectureId');
 const role = qs.get('role') || 'student';
 const isTeacher = role === 'teacher';
+const _liveCourseId = qs.get('courseId');
+
+// Set immediately so browser back also restores the course
+if (_liveCourseId) sessionStorage.setItem('openCourseOnLoad', _liveCourseId);
 
 // TODO: replace with your real auth — Firebase Auth currentUser, your session, etc.
 function getCurrentUser() {
@@ -443,10 +447,17 @@ document.getElementById('lectureId').textContent = lectureId;
 document.getElementById('roleLabel').textContent = isTeacher ? 'Teaching this lecture' : 'Joined as student';
 
 const SUPABASE_URL = "https://fzkpmptsnnkafaaeqhnf.supabase.co";
-const { getConfig } = await import("./JS/config.js");
 async function getSbKey() {
+  const { getConfig } = await import("./JS/config.js");
   const session = JSON.parse(localStorage.getItem("meridian_session") || "{}");
-  const cfg = await getConfig(session._idToken || "").catch(() => ({supabaseKey:""}));
+  let idToken = session.idToken || "";
+  // Try fresh Firebase token first
+  try {
+    const { getAuth } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js");
+    const user = getAuth().currentUser;
+    if (user) idToken = await user.getIdToken();
+  } catch {}
+  const cfg = await getConfig(idToken).catch(() => ({supabaseKey:""}));
   return cfg.supabaseKey;
 }
 
@@ -622,7 +633,11 @@ document.getElementById('shareBtn').onclick = async () => {
   rerender();
 };
 
-document.getElementById('leaveBtn').onclick = () => { room?.disconnect(); location.href = '/'; };
+document.getElementById('leaveBtn').onclick = () => {
+  room?.disconnect();
+  if (_liveCourseId) sessionStorage.setItem('openCourseOnLoad', _liveCourseId);
+  location.href = isTeacher ? 'teacher.html' : 'index.html';
+};
 
 Sidebar.onSend((text) => {
   room.localParticipant.publishData(

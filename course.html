@@ -45,12 +45,14 @@ body{ font-family:"Inter",sans-serif; background:radial-gradient(circle at top l
 .side-item{ height:54px; display:flex; align-items:center; padding:0 18px; border-radius:16px; cursor:pointer; margin-bottom:10px; font-size:14px; font-weight:600; color:#4b5563; transition:.2s ease; }
 .side-item:hover{ background:rgba(79,107,82,.06); }
 .side-item.active{ background:var(--accent); color:white; }
+.side-new-pill{ position:relative; display:inline-flex; align-items:center; background:#e8f5e9; color:#2e7d32; font-size:11px; font-weight:800; padding:4px 10px; border-radius:999px; letter-spacing:.04em; margin-left:auto; }
+.side-new-pill .side-new-count{ position:absolute; top:-7px; left:-7px; background:#c24141; color:#fff; font-size:10px; font-weight:800; min-width:18px; height:18px; border-radius:999px; display:flex; align-items:center; justify-content:center; padding:0 4px; border:2px solid white; box-shadow:0 2px 6px rgba(194,65,65,.35); }
 .main{ display:flex; flex-direction:column; gap:24px; }
 .surface{ background:var(--surface); backdrop-filter:blur(20px); border:1px solid var(--border); border-radius:32px; padding:28px; box-shadow:var(--shadow); }
 .section-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
 .section-title{ font-size:28px; font-weight:800; letter-spacing:-.05em; }
 .section-link{ color:var(--accent); text-decoration:none; font-size:14px; font-weight:700; }
-.content-scroll{ max-height:980px; overflow-y:auto; padding-right:6px; }
+.content-scroll{ overflow-y:visible; padding-right:6px; }
 .content-scroll::-webkit-scrollbar{ width:8px; }
 .content-scroll::-webkit-scrollbar-thumb{ background:rgba(79,107,82,.22); border-radius:20px; }
 .content-list{ display:flex; flex-direction:column; gap:16px; }
@@ -189,6 +191,49 @@ function resourceBtns(mode, week) {
 
 let _unsubscribeRealtime = null;
 
+async function fetchCourseAssessments(courseId) {
+  try {
+    const { getConfig } = await import('./JS/config.js');
+    const sess = JSON.parse(localStorage.getItem('meridian_session')||'{}');
+    let idToken = sess.idToken || '';
+    try {
+      const { getAuth } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+      const u = getAuth().currentUser;
+      if (u) idToken = await u.getIdToken();
+    } catch {}
+    const cfg = await getConfig(idToken).catch(()=>({supabaseKey:''}));
+    const k = cfg.supabaseKey;
+    const SURL = 'https://fzkpmptsnnkafaaeqhnf.supabase.co';
+    const res = await fetch(`${SURL}/rest/v1/assessments?course_id=eq.${courseId}&status=in.(open,closed)&order=created_at.desc`, {
+      headers: { apikey: k, Authorization: `Bearer ${k}` }
+    });
+    if (!res.ok) return [];
+    return res.json();
+  } catch { return []; }
+}
+
+async function fetchMyAttempts(courseId) {
+  try {
+    const { getConfig } = await import('./JS/config.js');
+    const sess = JSON.parse(localStorage.getItem('meridian_session')||'{}');
+    let idToken = sess.idToken || '';
+    try {
+      const { getAuth } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+      const u = getAuth().currentUser;
+      if (u) idToken = await u.getIdToken();
+    } catch {}
+    const cfg = await getConfig(idToken).catch(()=>({supabaseKey:''}));
+    const k = cfg.supabaseKey;
+    const SURL = 'https://fzkpmptsnnkafaaeqhnf.supabase.co';
+    const uid = sess.uid || '';
+    const res = await fetch(`${SURL}/rest/v1/attempts?student_id=eq.${uid}&status=eq.submitted`, {
+      headers: { apikey: k, Authorization: `Bearer ${k}` }
+    });
+    if (!res.ok) return [];
+    return res.json();
+  } catch { return []; }
+}
+
 async function render(code, from, to) {
   await loadDeps();
   const c = await _getById("courses", code);
@@ -199,7 +244,9 @@ async function render(code, from, to) {
   }
   const lectures = await _getLecturesByCourse(code);
   const assignments = await _getAssignmentsByCourse(code);
-  renderHTML(c, lectures, assignments, from || "#4f6b52", to || "#7f9679");
+  const assessments = await fetchCourseAssessments(code);
+  const myAttempts = await fetchMyAttempts(code);
+  renderHTML(c, lectures, assignments, assessments, myAttempts, from || "#4f6b52", to || "#7f9679");
 
   // ── Realtime: pick up teacher edits (new lectures, uploads, live status,
   // new assignments) without needing a reload. Re-subscribes each time a
@@ -219,7 +266,7 @@ async function render(code, from, to) {
   });
 }
 
-function renderHTML(c, lectures, assignments, from, to) {
+function renderHTML(c, lectures, assignments, assessments, myAttempts, from, to) {
   const isPhysical = c.mode === "physical";
   const modeLabel  = (c.mode||"").charAt(0).toUpperCase() + (c.mode||"").slice(1);
   const heroStyle  = "background:linear-gradient(135deg," + from + " 0%," + to + " 100%)";
@@ -228,33 +275,83 @@ function renderHTML(c, lectures, assignments, from, to) {
 
   const weeksHTML = sortedWeeks.map(function(w) {
     const statusEl = w.live
-      ? "<div style=\"display:flex;gap:10px;flex-wrap:wrap;align-items:center;\"><div class=\"live-pill\" onclick=\"event.stopPropagation();window.location.href='live.html?lectureId=" + encodeURIComponent(w.id) + "&role=student'\"><span class=\"live-now-dot\"></span>JOIN LIVE LECTURE</div><div class=\"content-status\">" + (w.date||"") + "</div></div>"
+      ? "<div style=\"display:flex;gap:10px;flex-wrap:wrap;align-items:center;\"><div class=\"live-pill\" onclick=\"event.stopPropagation();window.location.href='live.html?lectureId=" + encodeURIComponent(w.id) + "&role=student&courseId=" + encodeURIComponent(c.id) + "'\"><span class=\"live-now-dot\"></span>JOIN LIVE LECTURE</div><div class=\"content-status\">" + (w.date||"") + "</div></div>"
       : "<div class=\"content-status\">" + (w.date||"") + "</div>";
     var _href = w.live
-      ? 'live.html?lectureId=' + encodeURIComponent(w.id) + '&role=student'
+      ? 'live.html?lectureId=' + encodeURIComponent(w.id) + '&role=student&courseId=' + encodeURIComponent(c.id)
       : 'media.html?from=' + encodeURIComponent(c.id) + '&week=' + encodeURIComponent(w.weekNumber) + '&title=' + encodeURIComponent(w.title||"");
     var _liveClass = w.live ? " content-row--live" : "";
     return "<div class=\"content-row" + _liveClass + "\" style=\"cursor:pointer;\" onclick=\"window.location.href='" + _href + "'\"><div class=\"content-top\"><div class=\"content-left\"><div class=\"week-badge\">W" + w.weekNumber + "</div><div><div class=\"content-title\">" + (w.title||"Untitled") + "</div><div class=\"content-sub\">" + (w.description||"") + "</div></div></div>" + statusEl + "</div><div class=\"resource-grid\">" + resourceBtns(c.mode, w) + "</div></div>";
   }).join("") || "<div style=\"padding:30px;text-align:center;color:#6b7280;\">No lectures posted yet.</div>";
 
-  const assessHTML = assignments.map(function(a) {
-    const btnLabel = a.type === "CAT" ? "View Details" : "Open Assignment";
-    return "<div class=\"assignment-row\"><div class=\"assignment-left\"><div class=\"assignment-icon\">" + a.type + "</div><div><div class=\"assignment-title\">" + a.title + "</div><div class=\"assignment-sub\">" + (a.due||"") + "</div></div></div><button class=\"assignment-btn\">" + btnLabel + "</button></div>";
-  }).join("") || "<div style=\"padding:20px;text-align:center;color:#6b7280;\">No assignments yet.</div>";
+  // Build upcoming work from assessments (sorted by due_at, open first)
+  var submittedIds = new Set((myAttempts||[]).map(function(a){ return a.assessment_id; }));
+  var openAssessments = (assessments||[]).filter(function(a){ return a.status==='open'; });
+  var openCount = openAssessments.length;
+  var unattemptedCount = openAssessments.filter(function(a){ return !submittedIds.has(a.id); }).length;
+  var catCount = openAssessments.filter(function(a){ return a.type==='CAT'||a.type==='Quiz'; }).length;
+  var hwCount = openAssessments.filter(function(a){ return a.type==='HW'; }).length;
+
+  function lateLabel(due) {
+    if (!due) return '';
+    var diff = Date.now() - new Date(due).getTime();
+    if (diff<=0) return '';
+    var mins=Math.floor(diff/60000);
+    if (mins<60) return mins+'m overdue';
+    var hrs=Math.floor(mins/60);
+    if (hrs<24) return hrs+'h overdue';
+    return Math.floor(hrs/24)+'d overdue';
+  }
+  function fmtDue(iso) {
+    if (!iso) return '';
+    var d=new Date(iso);
+    return 'Due '+d.toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short'})+' '+d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+  }
+
+  var assessHTML = (assessments||[]).length === 0
+    ? "<div style=\"padding:20px;text-align:center;color:#6b7280;\">No assignments yet.</div>"
+    : (assessments||[]).map(function(a) {
+        var done = submittedIds.has(a.id);
+        var late = lateLabel(a.due_at);
+        var dueStr = fmtDue(a.due_at);
+        var iconClass = a.type==='CAT'||a.type==='Quiz' ? 'cat' : 'hw';
+        var iconColor = a.type==='CAT'||a.type==='Quiz' ? 'background:rgba(183,121,31,.12);color:#b7791f;' : 'background:rgba(79,107,82,.1);color:#4f6b52;';
+        var statusBadge = done
+          ? '<span style="background:#dcfce7;color:#15803d;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;">Done</span>'
+          : late
+            ? '<span style="background:#fee2e2;color:#b91c1c;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;">'+late+'</span>'
+            : a.status==='closed'
+              ? '<span style="background:#f3f4f6;color:#6b7280;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;">Closed</span>'
+              : '';
+        return "<div class=\"assignment-row\" style=\"cursor:pointer;\" onclick=\"window.location.href='assessment.html?courseId="+c.id+"&role=student'\">"+
+          "<div class=\"assignment-left\">"+
+          "<div class=\"assignment-icon\" style=\""+iconColor+"\">"+a.type+"</div>"+
+          "<div><div class=\"assignment-title\">"+(a.title||'Untitled')+"</div>"+
+          "<div class=\"assignment-sub\">"+(dueStr||a.type)+(a.duration_mins?' &bull; &#9201; '+a.duration_mins+'min':'')+"</div></div></div>"+
+          "<div style=\"display:flex;align-items:center;gap:8px;\">"+statusBadge+
+          "<button class=\"assignment-btn\" onclick=\"event.stopPropagation();window.location.href='attempt.html?assessmentId="+a.id+"'\">"+
+          (done?'Review':(a.status==='open'?'Start':'View'))+"</button></div></div>";
+      }).join('');
 
   document.getElementById("course-root").innerHTML =
     "<div class=\"page\">" +
     "<div class=\"hero\" style=\"" + heroStyle + "\"><div class=\"hero-top\"><div class=\"hero-left\"><div class=\"course-title\">" + c.title + "</div><div class=\"course-meta\">" + (c.semester||"") + " &bull; " + (c.schedule||"") + "<br>Lecturer: " + (c.lecturer||"TBA") + " &nbsp;&middot;&nbsp; " + modeLabel + "</div></div>" +
     "<div class=\"hero-actions\">" +
-    "<button class=\"hero-btn primary\" style=\"position:relative;\">View Assessments<span style=\"position:absolute;top:-8px;right:-8px;background:#c24141;color:white;font-size:11px;font-weight:700;min-width:20px;height:20px;border-radius:999px;display:flex;align-items:center;justify-content:center;padding:0 5px;border:2px solid white;box-shadow:0 2px 6px rgba(194,65,65,.4);\">" + assignments.length + "</span></button>" +
+    "<button class=\"hero-btn primary\" style=\"position:relative;\" onclick=\"window.location.href='assessment.html?courseId="+c.id+"&role=student'\">View Assessments"+(openCount>0?"<span style=\"position:absolute;top:-8px;right:-8px;background:#c24141;color:white;font-size:11px;font-weight:700;min-width:20px;height:20px;border-radius:999px;display:flex;align-items:center;justify-content:center;padding:0 5px;border:2px solid white;box-shadow:0 2px 6px rgba(194,65,65,.4);\">" + openCount + "</span>":"")+"</button>" +
     "<button class=\"hero-btn secondary\" style=\"position:relative;\">Announcements</button>" +
     "</div></div></div>" +
-    "<div class=\"content-grid\"><div class=\"sidebar\"><div class=\"side-title\">COURSE</div><div class=\"side-item active\">Overview</div><div class=\"side-item\">Lectures</div><div class=\"side-item\">Assignments</div><div class=\"side-item\">CATs &amp; Exams</div><div class=\"side-item\">Resources</div><div class=\"side-item\">Grades</div><div class=\"side-item\">Discussion</div></div>" +
+    "<div class=\"content-grid\"><div class=\"sidebar\"><div class=\"side-title\">COURSE</div><div class=\"side-item active\">Overview</div><div class=\"side-item\">Lectures</div><div class=\"side-item\"><span>Assessments</span>"+(unattemptedCount>0?"<div class=\"side-new-pill\">"+(unattemptedCount>1?"<span class=\"side-new-count\">"+unattemptedCount+"</span>":"")+"NEW</div>":"")+"</div><div class=\"side-item\">Resources</div><div class=\"side-item\">Grades</div><div class=\"side-item\">Discussion</div></div>" +
     "<div class=\"main\"><div class=\"surface\"><div class=\"section-head\"><div class=\"section-title\">Course Content</div><a href=\"#\" class=\"section-link\">View All Weeks</a></div><div class=\"content-scroll\"><div class=\"content-list\">" + weeksHTML + "</div></div></div>" +
-    "<div class=\"surface\" id=\"assessments-surface\"><div class=\"section-head\"><div class=\"section-title\">Upcoming Work</div><a href=\"#\" class=\"section-link\">View All</a></div><div class=\"assignment-list\">" + assessHTML + "</div></div></div></div></div>";
+    "<div class=\"surface\" id=\"assessments-surface\"><div class=\"section-head\"><div class=\"section-title\">Upcoming Work"+"</div><a href=\"assessment.html?courseId="+c.id+"&role=student\" class=\"section-link\">View All</a></div><div class=\"assignment-list\">" + assessHTML + "</div></div></div></div></div>";
 
   document.querySelectorAll(".side-item").forEach(function(item) {
     item.addEventListener("click", function() {
+      var label = item.textContent.trim();
+      var courseCode = (c && c.id) ? c.id : (sessionStorage.getItem("activeCourse") || "");
+      if (label === "Assessments" || label.startsWith("Assessments")) {
+        window.location.href = "assessment.html?courseId=" + courseCode + "&role=student";
+        return;
+      }
       document.querySelectorAll(".side-item").forEach(function(el){ el.classList.remove("active"); });
       item.classList.add("active");
     });

@@ -467,6 +467,68 @@ body{ font-family:'Inter',sans-serif; background:radial-gradient(circle at top l
   </div>
 </div>
 
+
+<!-- LIVE CLASS MODAL — shown when a live class is found -->
+<div class="modal-overlay" id="liveClassModal">
+  <div class="modal" style="width:min(480px,92vw);">
+    <div class="modal-header" style="border-bottom:none;padding-bottom:8px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:12px;background:rgba(63,122,84,.12);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3f7a54" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="#3f7a54" stroke="none"/></svg>
+        </span>
+        <div class="modal-title">Live Class Active</div>
+      </div>
+      <button class="modal-close" id="liveModalClose">&#x2715;</button>
+    </div>
+    <div class="modal-body" style="gap:20px;padding-top:12px;">
+      <div style="background:linear-gradient(135deg,rgba(63,122,84,.08) 0%,rgba(79,107,82,.04) 100%);border:1px solid rgba(63,122,84,.15);border-radius:20px;padding:20px 22px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <span style="width:8px;height:8px;border-radius:50%;background:#3f7a54;display:inline-block;box-shadow:0 0 0 3px rgba(63,122,84,.2);animation:livePulse 1.5s ease-in-out infinite;"></span>
+          <span style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#3f7a54;">Live Now</span>
+        </div>
+        <div id="liveModalCourseName" style="font-size:20px;font-weight:800;letter-spacing:-.03em;margin-bottom:4px;"></div>
+        <div id="liveModalMeta" style="font-size:14px;color:var(--sub);"></div>
+      </div>
+      <button class="btn primary" id="liveModalJoinBtn" style="width:100%;height:52px;font-size:16px;border-radius:18px;justify-content:center;letter-spacing:-.01em;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Join Now
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- NO LIVE CLASS MODAL -->
+<div class="modal-overlay" id="noLiveModal">
+  <div class="modal" style="width:min(420px,92vw);">
+    <div class="modal-header" style="border-bottom:none;padding-bottom:8px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:12px;background:rgba(107,114,128,.1);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M9 9h.01M15 9h.01M9 15h6"/></svg>
+        </span>
+        <div class="modal-title" style="color:var(--sub);">No Live Class</div>
+      </div>
+      <button class="modal-close" id="noLiveModalClose">&#x2715;</button>
+    </div>
+    <div class="modal-body" style="gap:16px;padding-top:8px;">
+      <div style="background:#f9f8f6;border:1px solid var(--border);border-radius:18px;padding:24px 22px;text-align:center;">
+        <div style="display:flex;justify-content:center;margin-bottom:12px;">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 10l4.553-2.276A1 1 0 0 1 21 8.723v6.554a1 1 0 0 1-1.447.894L15 14"/><rect x="2" y="7" width="13" height="10" rx="3"/><line x1="2" y1="12" x2="15" y2="12" stroke-dasharray="2 2"/></svg>
+        </div>
+        <div style="font-size:15px;font-weight:600;margin-bottom:6px;">No active sessions right now</div>
+        <div style="font-size:14px;color:var(--sub);line-height:1.6;">Your teacher hasn't started a live class yet. Check your timetable or come back when class is scheduled to begin.</div>
+      </div>
+      <button class="btn ghost" id="noLiveModalOk" style="width:100%;height:44px;justify-content:center;border-radius:14px;">Got it</button>
+    </div>
+  </div>
+</div>
+
+<style>
+@keyframes livePulse {
+  0%,100%{ box-shadow:0 0 0 3px rgba(63,122,84,.2); }
+  50%{ box-shadow:0 0 0 6px rgba(63,122,84,.08); }
+}
+</style>
+
 <!-- REGULAR SCRIPTS -->
 <script>
 // ── CSS Scoper: prefixes selectors with a given scope, preserves @media/@keyframes ──
@@ -1072,9 +1134,26 @@ document.getElementById("joinLiveClassBtn")?.addEventListener("click", async () 
   const allLectures = await getAll("lectures");
   const liveLecture = allLectures.find(l => l.live);
   if (liveLecture) {
-    window.location.href = `live.html?lectureId=${encodeURIComponent(liveLecture.id)}&role=student`;
+    // Find course name for display
+    const { getById } = await import("./JS/db.js");
+    const course = await getById("courses", liveLecture.course_id).catch(() => null);
+    const nameEl = document.getElementById("liveModalCourseName");
+    const metaEl = document.getElementById("liveModalMeta");
+    if (nameEl) nameEl.textContent = course?.title || liveLecture.course_id || "Live Session";
+    if (metaEl) metaEl.textContent = [course?.code, liveLecture.scheduledFor ? "Started " + liveLecture.scheduledFor : ""].filter(Boolean).join(" · ");
+    const overlay = document.getElementById("liveClassModal");
+    overlay.classList.add("open");
+    document.getElementById("liveModalJoinBtn").onclick = () => {
+      window.location.href = `live.html?lectureId=${encodeURIComponent(liveLecture.id)}&role=student`;
+    };
+    document.getElementById("liveModalClose").onclick = () => overlay.classList.remove("open");
+    overlay.addEventListener("click", e => { if (e.target === overlay) overlay.classList.remove("open"); }, { once: true });
   } else {
-    alert("No live class is currently happening.");
+    const overlay = document.getElementById("noLiveModal");
+    overlay.classList.add("open");
+    document.getElementById("noLiveModalClose").onclick = () => overlay.classList.remove("open");
+    document.getElementById("noLiveModalOk").onclick = () => overlay.classList.remove("open");
+    overlay.addEventListener("click", e => { if (e.target === overlay) overlay.classList.remove("open"); }, { once: true });
   }
 });
 refreshOfflineStats();
@@ -1082,21 +1161,35 @@ refreshOfflineStats();
 // ── Realtime: pick up enrollment/course changes without needing a reload ──
 // If an admin enrolls/unenrolls this student, or a course is added/edited,
 // the dashboard updates live instead of requiring a hard refresh.
-import("./JS/supabase.js").then(({ subscribeToTable }) => {
-  subscribeToTable("enrollments", () => renderCourseGrid())
+import("./JS/supabase.js").then(({ subscribeToTable, syncTable }) => {
+  const refresh = (table) => async () => {
+    await syncTable(table);
+    await renderCourseGrid();
+  };
+  subscribeToTable("enrollments", refresh("enrollments"))
     .catch(err => console.warn("[index] Realtime enrollments failed:", err));
-  subscribeToTable("courses", () => renderCourseGrid())
+  subscribeToTable("courses", refresh("courses"))
     .catch(err => console.warn("[index] Realtime courses failed:", err));
-  subscribeToTable("lectures", () => renderCourseGrid())
+  subscribeToTable("lectures", refresh("lectures"))
     .catch(err => console.warn("[index] Realtime lectures failed:", err));
 });
 
-// Resume course if coming back from media.html
+// Resume course if coming back from media/live/assessment
 const _resumeCode = sessionStorage.getItem("openCourseOnLoad");
 if (_resumeCode) {
   sessionStorage.removeItem("openCourseOnLoad");
-  const _idx = COURSE_CODES.findIndex(c => c.code === _resumeCode);
-  if (_idx !== -1) openCourse(_idx);
+  // COURSE_CODES populated by renderCourseGrid above; find and open
+  let _idx = COURSE_CODES.findIndex(c => c.code === _resumeCode);
+  if (_idx !== -1) {
+    openCourse(_idx);
+  } else {
+    // Fallback: renderCourseGrid may have failed or returned early.
+    // Re-render then retry once.
+    renderCourseGrid().then(() => {
+      const _idx2 = COURSE_CODES.findIndex(c => c.code === _resumeCode);
+      if (_idx2 !== -1) openCourse(_idx2);
+    }).catch(() => {});
+  }
 }
 </script>
 <!---Service Worker--->
