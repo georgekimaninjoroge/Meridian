@@ -2,8 +2,6 @@
   <img src="https://raw.githubusercontent.com/georgekimaninjoroge/Meridian/main/assets/meridian.png" alt="Meridian" width="100%"/>
 </p>
 
----
-
 ## The Problem
 
 Canvas, Moodle, and Google Classroom share one fatal assumption: the network is always there. The moment it drops, they stop working. No fallback, no queue, no recovery.
