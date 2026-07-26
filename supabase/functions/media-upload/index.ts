@@ -111,13 +111,14 @@ Deno.serve(async (req: Request) => {
     if (assetInitErr) throw new Error(assetInitErr.message);
 
     // ── Record chunk in DB ───────────────────────────────────────────────────
+    // FIX: specify onConflict so upsert resolves duplicate key on re-upload
     const { error: chunkErr } = await supabase.from("storage_chunks").upsert({
       asset_id:    assetId,
       chunk_index: chunkIndex,
       url:         storagePath,
       type,
       uploaded_at: new Date().toISOString(),
-    });
+    }, { onConflict: "asset_id,chunk_index" });
     if (chunkErr) throw new Error(chunkErr.message);
 
     // ── Mark complete on last chunk ──────────────────────────────────────────

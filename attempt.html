@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Assessment | Meridian</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{--text:#111827;--sub:#6b7280;--accent:#4f6b52;--red:#c24141;--border:rgba(17,24,39,.08);--surface:rgba(255,255,255,.9);}
+body{font-family:"Inter",sans-serif;background:radial-gradient(circle at top left,#ebe5db 0%,transparent 26%),linear-gradient(to bottom,#faf9f7 0%,#f3f1eb 100%);color:var(--text);min-height:100vh;}
+/* TOPBAR */
+.topbar{position:sticky;top:0;z-index:100;backdrop-filter:blur(18px);background:rgba(250,249,247,.9);border-bottom:1px solid var(--border);padding:0 28px;height:64px;display:flex;align-items:center;justify-content:space-between;gap:20px;}
+.topbar-left{display:flex;flex-direction:column;}
+.topbar-title{font-size:15px;font-weight:700;letter-spacing:-.02em;}
+.topbar-sub{font-size:12px;color:var(--sub);}
+.timer{font-size:22px;font-weight:800;letter-spacing:-.04em;font-variant-numeric:tabular-nums;}
+.timer.warn{color:var(--red);}
+.submit-btn{height:42px;padding:0 22px;border-radius:14px;border:none;background:var(--accent);color:#fff;font-size:14px;font-weight:700;cursor:pointer;transition:.15s ease;}
+.submit-btn:hover{filter:brightness(1.06);}
+.submit-btn:disabled{opacity:.5;cursor:not-allowed;}
+/* LAYOUT */
+.page{max-width:780px;margin:auto;padding:32px 20px 80px;}
+/* QUESTION CARD */
+.q-card{background:var(--surface);backdrop-filter:blur(20px);border:1.5px solid var(--border);border-radius:24px;padding:24px 26px;margin-bottom:18px;}
+.q-header{display:flex;align-items:center;gap:12px;margin-bottom:16px;}
+.q-num{width:32px;height:32px;border-radius:10px;background:rgba(79,107,82,.1);color:var(--accent);display:grid;place-items:center;font-size:13px;font-weight:800;flex-shrink:0;}
+.q-text{font-size:16px;font-weight:600;line-height:1.5;flex:1;}
+/* MCQ */
+.mcq-list{display:flex;flex-direction:column;gap:10px;}
+.mcq-opt{display:flex;align-items:center;gap:12px;padding:13px 16px;border:1.5px solid var(--border);border-radius:14px;cursor:pointer;transition:.15s ease;background:#fff;}
+.mcq-opt:hover{border-color:rgba(79,107,82,.35);background:rgba(79,107,82,.03);}
+.mcq-opt.selected{border-color:var(--accent);background:rgba(79,107,82,.06);}
+.mcq-opt input[type="radio"]{width:17px;height:17px;accent-color:var(--accent);flex-shrink:0;}
+.mcq-opt-label{font-size:14px;font-weight:500;}
+/* Written */
+.written-input{width:100%;border:1.5px solid var(--border);border-radius:14px;padding:14px 16px;font-size:14px;font-family:inherit;outline:none;resize:vertical;min-height:120px;line-height:1.6;background:#fff;transition:.15s ease;}
+.written-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,107,82,.1);}
+/* File */
+.file-zone{border:2px dashed rgba(79,107,82,.25);border-radius:14px;padding:28px;text-align:center;color:var(--sub);font-size:14px;cursor:pointer;transition:.15s ease;background:#fff;}
+.file-zone:hover{border-color:var(--accent);background:rgba(79,107,82,.03);}
+.file-name{font-size:13px;color:var(--accent);font-weight:600;margin-top:8px;}
+/* States */
+.loading{text-align:center;padding:80px 20px;color:var(--sub);}
+.result-card{background:var(--surface);border-radius:28px;padding:40px;text-align:center;max-width:500px;margin:60px auto;}
+.result-score{font-size:64px;font-weight:800;letter-spacing:-.06em;color:var(--accent);margin-bottom:8px;}
+.result-label{font-size:16px;color:var(--sub);margin-bottom:28px;}
+.result-btn{display:inline-flex;align-items:center;gap:8px;height:46px;padding:0 22px;border-radius:14px;border:none;background:var(--accent);color:#fff;font-size:14px;font-weight:700;cursor:pointer;}
+/* Toast */
+.toast{position:fixed;bottom:28px;right:28px;z-index:99999;padding:14px 20px;border-radius:16px;font-size:14px;font-weight:600;box-shadow:0 12px 32px rgba(0,0,0,.15);opacity:0;transform:translateY(8px);transition:.2s ease;color:#fff;max-width:300px;}
+/* Confirm overlay */
+.overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px;opacity:0;pointer-events:none;transition:opacity .2s;}
+.overlay.visible{opacity:1;pointer-events:all;}
+.modal{background:#faf9f7;border-radius:26px;padding:30px;max-width:440px;width:100%;box-shadow:0 32px 80px rgba(15,23,42,.2);transform:translateY(10px);opacity:0;transition:.2s ease;}
+.overlay.visible .modal{transform:translateY(0);opacity:1;}
+.modal-title{font-size:19px;font-weight:800;margin-bottom:10px;}
+.modal-body{font-size:14px;color:var(--sub);line-height:1.6;margin-bottom:22px;}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;}
+.btn{height:42px;padding:0 18px;border-radius:13px;border:none;font-size:14px;font-weight:700;cursor:pointer;transition:.15s;}
+.btn.ghost{background:rgba(17,24,39,.07);color:var(--sub);}
+.btn.primary{background:var(--accent);color:#fff;}
+@media(max-width:600px){.topbar{padding:0 16px;}.page{padding:20px 14px 80px;}.q-card{padding:18px;}}
+</style>
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16x16.png">
+  <link rel="manifest" href="assets/icons/site.webmanifest">
+  <link rel="icon" href="assets/icons/favicon.ico">
+</head>
+<body>
+
+<div class="topbar" id="topbar" style="display:none;">
+  <div class="topbar-left">
+    <div class="topbar-title" id="assessTitle">—</div>
+    <div class="topbar-sub" id="assessMeta">—</div>
+  </div>
+  <div class="timer" id="timerEl" style="display:none;"></div>
+  <button class="submit-btn" id="submitBtn">Submit</button>
+</div>
+
+<div class="page" id="pageRoot">
+  <div class="loading">Loading assessment...</div>
+</div>
+
+<div class="overlay" id="submitOverlay">
+  <div class="modal">
+    <div class="modal-title">Submit Assessment</div>
+    <div class="modal-body" id="submitModalBody">Are you sure you want to submit? You won't be able to change your answers after submitting.</div>
+    <div class="modal-footer">
+      <button class="btn ghost" id="submitCancelBtn">Go Back</button>
+      <button class="btn primary" id="submitConfirmBtn">Submit Now</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { SUPABASE_URL, getConfig } from './JS/config.js';
+import { requireSession } from './JS/session.js';
+
+const qs = new URLSearchParams(location.search);
+const assessmentId = qs.get('assessmentId');
+
+const session = await requireSession();
+const studentId = session.uid;
+
+if (!assessmentId) { location.href = 'index.html'; }
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+let _sbKey = '';
+async function sbKey() {
+  if (_sbKey) return _sbKey;
+  const { getAuth } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+  let idToken = '';
+  try { const u = getAuth().currentUser; if (u) idToken = await u.getIdToken(); } catch {}
+  if (!idToken) try { idToken = JSON.parse(localStorage.getItem('meridian_session')||'{}').idToken||''; } catch {}
+  const cfg = await getConfig(idToken).catch(()=>({supabaseKey:''}));
+  _sbKey = cfg.supabaseKey;
+  return _sbKey;
+}
+async function sbH(extra={}) {
+  const k = await sbKey();
+  return { 'apikey':k, 'Authorization':`Bearer ${k}`, 'Content-Type':'application/json', ...extra };
+}
+
+// ── DB ────────────────────────────────────────────────────────────────────────
+async function fetchAssessment() {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/assessments?id=eq.${assessmentId}`, { headers: await sbH() });
+  const rows = await res.json();
+  return rows[0] || null;
+}
+
+async function fetchQuestions() {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/questions?assessment_id=eq.${assessmentId}&order=position.asc`, { headers: await sbH() });
+  return res.json();
+}
+
+async function fetchMyAttempt() {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/attempts?assessment_id=eq.${assessmentId}&student_id=eq.${studentId}&order=attempt_number.desc&limit=1`, { headers: await sbH() });
+  const rows = await res.json();
+  return rows[0] || null;
+}
+
+async function createAttempt(assessment, questionOrder) {
+  const existing = await fetchMyAttempt();
+  const attempt_number = existing ? existing.attempt_number + 1 : 1;
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/attempts`, {
+    method: 'POST',
+    headers: await sbH({ 'Prefer': 'return=representation' }),
+    body: JSON.stringify({
+      id: `${assessmentId}_${studentId}_${Date.now()}`,
+      assessment_id: assessmentId,
+      student_id: studentId,
+      attempt_number,
+      started_at: new Date().toISOString(),
+      question_order: questionOrder,
+      answers: {},
+      status: 'in_progress'
+    })
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return (await res.json())[0];
+}
+
+async function saveAnswers(attemptId, answers) {
+  await fetch(`${SUPABASE_URL}/rest/v1/attempts?id=eq.${attemptId}`, {
+    method: 'PATCH',
+    headers: await sbH(),
+    body: JSON.stringify({ answers })
+  });
+}
+
+async function submitAttempt(attemptId, answers, score, status='submitted') {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/attempts?id=eq.${attemptId}`, {
+    method: 'PATCH',
+    headers: await sbH({ 'Prefer': 'return=representation' }),
+    body: JSON.stringify({ answers, score, status, submitted_at: new Date().toISOString() })
+  });
+  if (!res.ok) throw new Error(await res.text());
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function toast(msg, type='success') {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.style.background = type==='error' ? '#c24141' : '#4f6b52';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  requestAnimationFrame(()=>{ t.style.opacity='1'; t.style.transform='translateY(0)'; });
+  setTimeout(()=>{ t.style.opacity='0'; t.style.transform='translateY(8px)'; setTimeout(()=>t.remove(),220); }, 3000);
+}
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let _assessment = null;
+let _questions = [];
+let _attempt = null;
+let _orderedQuestions = [];
+let _answers = {}; // questionId -> answer value
+let _timerInterval = null;
+
+// ── Timer ─────────────────────────────────────────────────────────────────────
+function startTimer(startedAt, durationMins) {
+  const endTime = new Date(startedAt).getTime() + durationMins * 60000;
+  const timerEl = document.getElementById('timerEl');
+  timerEl.style.display = 'block';
+
+  function tick() {
+    const remaining = endTime - Date.now();
+    if (remaining <= 0) {
+      timerEl.textContent = '0:00';
+      clearInterval(_timerInterval);
+      autoSubmit();
+      return;
+    }
+    const mins = Math.floor(remaining / 60000);
+    const secs = Math.floor((remaining % 60000) / 1000);
+    timerEl.textContent = `${mins}:${secs.toString().padStart(2,'0')}`;
+    timerEl.className = 'timer' + (remaining < 300000 ? ' warn' : '');
+  }
+  tick();
+  _timerInterval = setInterval(tick, 1000);
+}
+
+// ── Auto-save ─────────────────────────────────────────────────────────────────
+let _saveTimeout = null;
+function scheduleAutoSave() {
+  clearTimeout(_saveTimeout);
+  _saveTimeout = setTimeout(()=>{
+    if (_attempt) saveAnswers(_attempt.id, _answers).catch(()=>{});
+  }, 1500);
+}
+
+// ── Render attempt ────────────────────────────────────────────────────────────
+function renderAttempt() {
+  const root = document.getElementById('pageRoot');
+  root.innerHTML = _orderedQuestions.map((q,i) => {
+    let answerUI = '';
+    if (q.type === 'mcq') {
+      const opts = (q.options||[]);
+      answerUI = `<div class="mcq-list">${opts.map((opt,oi)=>`
+        <label class="mcq-opt ${_answers[q.id]===String(oi)?'selected':''}" data-qid="${q.id}" data-oi="${oi}">
+          <input type="radio" name="q_${q.id}" value="${oi}" ${_answers[q.id]===String(oi)?'checked':''}>
+          <span class="mcq-opt-label">${opt.value || `Option ${oi+1}`}</span>
+        </label>`).join('')}</div>`;
+    } else if (q.type === 'written') {
+      answerUI = `<textarea class="written-input" data-qid="${q.id}" placeholder="Type your answer here...">${_answers[q.id]||''}</textarea>`;
+    } else if (q.type === 'file') {
+      answerUI = `
+        <div class="file-zone" onclick="document.getElementById('fileInput_${q.id}').click()">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 8px;display:block;opacity:.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Click to upload a file
+          ${_answers[q.id] ? `<div class="file-name">✓ ${_answers[q.id]}</div>` : ''}
+        </div>
+        <input type="file" id="fileInput_${q.id}" style="display:none" data-qid="${q.id}">`;
+    }
+    return `
+      <div class="q-card">
+        <div class="q-header">
+          <div class="q-num">${i+1}</div>
+          <div class="q-text">${q.text}</div>
+        </div>
+        ${answerUI}
+      </div>`;
+  }).join('');
+
+  // Wire events
+  // MCQ
+  root.querySelectorAll('.mcq-opt').forEach(opt => {
+    opt.addEventListener('click', () => {
+      const qid = opt.dataset.qid;
+      const oi = opt.dataset.oi;
+      _answers[qid] = String(oi);
+      root.querySelectorAll(`.mcq-opt[data-qid="${qid}"]`).forEach(o=>o.classList.remove('selected'));
+      opt.classList.add('selected');
+      opt.querySelector('input').checked = true;
+      scheduleAutoSave();
+    });
+  });
+  // Written
+  root.querySelectorAll('.written-input').forEach(ta => {
+    ta.addEventListener('input', () => {
+      _answers[ta.dataset.qid] = ta.value;
+      scheduleAutoSave();
+    });
+  });
+  // File
+  root.querySelectorAll('input[type="file"]').forEach(inp => {
+    inp.addEventListener('change', () => {
+      if (inp.files[0]) {
+        _answers[inp.dataset.qid] = inp.files[0].name;
+        scheduleAutoSave();
+        renderAttempt(); // re-render to show filename
+      }
+    });
+  });
+}
+
+// ── Score calc ────────────────────────────────────────────────────────────────
+function calcScore() {
+  const mcqQs = _orderedQuestions.filter(q=>q.type==='mcq' && q.correct_answer!==null && q.correct_answer!=='');
+  if (mcqQs.length === 0) return null;
+  const correct = mcqQs.filter(q=>_answers[q.id]===q.correct_answer).length;
+  return Math.round((correct/mcqQs.length)*100);
+}
+
+// ── Submit ────────────────────────────────────────────────────────────────────
+async function doSubmit() {
+  clearInterval(_timerInterval);
+  document.getElementById('submitBtn').disabled = true;
+  const score = calcScore();
+  try {
+    await submitAttempt(_attempt.id, _answers, score);
+    showResult(score);
+  } catch(e) {
+    toast('Submit failed: '+e.message, 'error');
+    document.getElementById('submitBtn').disabled = false;
+  }
+}
+
+async function autoSubmit() {
+  toast('Time is up! Submitting automatically...', 'warn');
+  await doSubmit();
+}
+
+function showResult(score) {
+  document.getElementById('topbar').style.display = 'none';
+  const root = document.getElementById('pageRoot');
+  const hasMCQ = _orderedQuestions.some(q=>q.type==='mcq' && q.correct_answer);
+  root.innerHTML = `
+    <div class="result-card">
+      ${hasMCQ && score!==null ? `
+        <div class="result-score">${score}%</div>
+        <div class="result-label">Your score on MCQ questions</div>` : `
+        <div style="font-size:48px;margin-bottom:12px;">✓</div>
+        <div class="result-label" style="font-size:18px;font-weight:700;color:var(--text);">Submitted successfully</div>
+        <div class="result-label">Your teacher will grade written and file answers.</div>`}
+      <button class="result-btn" onclick="location.href='assessment.html?courseId='+(_assessment&&_assessment.course_id?encodeURIComponent(_assessment.course_id):'')+'&role=student'">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        Back to Assessments
+      </button>
+    </div>`;
+}
+
+// ── Submit modal ──────────────────────────────────────────────────────────────
+const submitOverlay = document.getElementById('submitOverlay');
+document.getElementById('submitBtn').onclick = () => {
+  const unanswered = _orderedQuestions.filter(q=>!_answers[q.id]).length;
+  document.getElementById('submitModalBody').textContent = unanswered > 0
+    ? `You have ${unanswered} unanswered question${unanswered>1?'s':''}. Are you sure you want to submit?`
+    : 'Are you sure you want to submit? You won\'t be able to change your answers.';
+  submitOverlay.classList.add('visible');
+};
+document.getElementById('submitCancelBtn').onclick = () => submitOverlay.classList.remove('visible');
+document.getElementById('submitConfirmBtn').onclick = () => { submitOverlay.classList.remove('visible'); doSubmit(); };
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+async function init() {
+  try {
+    _assessment = await fetchAssessment();
+    if (!_assessment) { document.getElementById('pageRoot').innerHTML = '<div class="loading">Assessment not found.</div>'; return; }
+    if (_assessment.status !== 'open') { document.getElementById('pageRoot').innerHTML = '<div class="loading">This assessment is not currently open.</div>'; return; }
+
+    _questions = await fetchQuestions();
+    _attempt = await fetchMyAttempt();
+
+    // Check if already submitted
+    if (_attempt && _attempt.status === 'submitted') {
+      showResult(_attempt.score);
+      return;
+    }
+
+    // Check max attempts
+    if (_attempt && _attempt.attempt_number >= _assessment.max_attempts && _attempt.status !== 'in_progress') {
+      document.getElementById('pageRoot').innerHTML = '<div class="loading">You have used all your attempts for this assessment.</div>';
+      return;
+    }
+
+    // Check timer expiry on existing attempt
+    if (_attempt && _attempt.status === 'in_progress' && _assessment.duration_mins) {
+      const endTime = new Date(_attempt.started_at).getTime() + _assessment.duration_mins * 60000;
+      if (Date.now() > endTime) {
+        // Auto-submit expired attempt
+        await submitAttempt(_attempt.id, _attempt.answers||{}, null, 'expired');
+        document.getElementById('pageRoot').innerHTML = '<div class="loading">Your attempt expired and was auto-submitted.</div>';
+        return;
+      }
+    }
+
+    // Resume or create attempt
+    if (_attempt && _attempt.status === 'in_progress') {
+      _answers = _attempt.answers || {};
+      const order = _attempt.question_order || _questions.map(q=>q.id);
+      _orderedQuestions = order.map(id=>_questions.find(q=>q.id===id)).filter(Boolean);
+    } else {
+      // New attempt — randomize if enabled
+      let order = _questions.map(q=>q.id);
+      if (_assessment.randomize_questions) order = order.sort(()=>Math.random()-.5);
+      _orderedQuestions = order.map(id=>_questions.find(q=>q.id===id)).filter(Boolean);
+      _attempt = await createAttempt(_assessment, order);
+    }
+
+    // Show UI
+    document.getElementById('topbar').style.display = 'flex';
+    document.getElementById('assessTitle').textContent = _assessment.title;
+    document.getElementById('assessMeta').textContent = `${_assessment.type}${_assessment.duration_mins ? ` · ${_assessment.duration_mins} min` : ''}`;
+
+    // Check due/late
+    if (_assessment.due_at && !_assessment.allow_late && Date.now() > new Date(_assessment.due_at).getTime()) {
+      document.getElementById('pageRoot').innerHTML = '<div class="loading">The submission deadline has passed.</div>';
+      return;
+    }
+
+    if (_assessment.duration_mins) startTimer(_attempt.started_at, _assessment.duration_mins);
+
+    renderAttempt();
+
+  } catch(e) {
+    document.getElementById('pageRoot').innerHTML = `<div class="loading">Error: ${e.message}</div>`;
+  }
+}
+
+await init();
+</script>
+</body>
+</html>

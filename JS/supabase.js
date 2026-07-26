@@ -213,6 +213,96 @@ export async function deleteLecture(id) {
 }
 
 /**
+ * Delete notes PDF from storage + clear notes_url on lecture row.
+ * lecture: full lecture object (needs id, courseId, weekNumber, notesUrl, etc.)
+ */
+/** PATCH a single column to null on a lecture row. */
+async function clearLectureColumn(lectureId, column) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/lectures?id=eq.${lectureId}`, {
+    method: "PATCH",
+    headers: { ...await getHeaders(), "Prefer": "return=minimal" },
+    body: JSON.stringify({ [column]: null })
+  });
+  if (!res.ok) throw new Error(`Clear ${column} failed: ${res.status}`);
+}
+
+export async function deleteNotes(lecture) {
+  const headers = await getHeaders();
+
+  // Extract storage path from signed URL: .../lecture-media/{path}?token=...
+  let path = null;
+  try {
+    const m = lecture.notesUrl.match(/lecture-media\/([^?]+)/);
+    if (m) path = m[1];
+  } catch { /* ignore */ }
+
+  // Fallback: reconstruct from known pattern (try pdf)
+  if (!path) path = `${lecture.courseId}/week${lecture.weekNumber}_notes.pdf`;
+
+  await fetch(`${SUPABASE_URL}/storage/v1/object/lecture-media/${path}`, {
+    method: "DELETE", headers
+  }).catch(() => {});
+
+  await clearLectureColumn(lecture.id, "notes_url");
+  // Also strip resource tag via upsert
+  const resources = (lecture.resources || []).filter(r => r !== "Lecture Notes");
+  await fetch(`${SUPABASE_URL}/rest/v1/lectures?id=eq.${lecture.id}`, {
+    method: "PATCH",
+    headers: { ...await getHeaders(), "Prefer": "return=minimal" },
+    body: JSON.stringify({ resources })
+  }).catch(() => {});
+}
+
+/**
+ * Delete chunked video from storage_assets + clear video_url on lecture row.
+ * lecture: full lecture object (videoUrl = lecture.id used as assetId).
+ */
+export async function deleteRecording(lecture) {
+  const headers = await getHeaders();
+  const assetId = lecture.videoUrl || lecture.id;
+
+  // Also delete actual chunk files from lecture-media storage bucket
+  try {
+    const chunkRows = await fetch(
+      `${SUPABASE_URL}/rest/v1/storage_chunks?asset_id=eq.${encodeURIComponent(assetId)}&select=storage_path`,
+      { headers }
+    ).then(r => r.json()).catch(() => []);
+    const paths = (chunkRows || []).map(r => r.storage_path).filter(Boolean);
+    if (paths.length) {
+      await fetch(`${SUPABASE_URL}/storage/v1/object/lecture-media`, {
+        method: "DELETE", headers: { ...headers, "Content-Type": "application/json" },
+        body: JSON.stringify({ prefixes: paths })
+      }).catch(() => {});
+    }
+  } catch { /* best-effort */ }
+
+  // Delete all chunks from storage_chunks (actual data)
+  await fetch(`${SUPABASE_URL}/rest/v1/storage_chunks?asset_id=eq.${encodeURIComponent(assetId)}`, {
+    method: "DELETE", headers
+  }).catch(() => {});
+
+  // Delete storage_assets metadata row
+  await fetch(`${SUPABASE_URL}/rest/v1/storage_assets?id=eq.${encodeURIComponent(assetId)}`, {
+    method: "DELETE", headers
+  }).catch(() => {});
+
+  // Also try to clear video_chunks from IndexedDB
+  try {
+    const { getByIndex, deleteById: dbDel } = await import("./db.js");
+    const chunks = await getByIndex("video_chunks", "by_lecture", assetId).catch(() => []);
+    for (const c of (chunks || [])) { await dbDel("video_chunks", c.chunkId).catch(() => {}); }
+  } catch { /* offline-ok */ }
+
+  await clearLectureColumn(lecture.id, "video_url");
+  const resources = (lecture.resources || []).filter(r => r !== "Lecture Recording");
+  await fetch(`${SUPABASE_URL}/rest/v1/lectures?id=eq.${lecture.id}`, {
+    method: "PATCH",
+    headers: { ...await getHeaders(), "Prefer": "return=minimal" },
+    body: JSON.stringify({ resources })
+  }).catch(() => {});
+}
+
+/**
  * Insert or update an assignment row (upsert by id).
  * row: { id, courseId, type, title, due }
  */

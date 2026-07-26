@@ -1,6 +1,6 @@
 // sw.js - Meridian Service Worker
 // Offline-first + virtual video filesystem (chunked Supabase Storage → Range requests)
-const CACHE_NAME = "meridian-v1.1770";
+const CACHE_NAME = "meridian-v1.1780";
 
 const FILES_TO_CACHE = [
   "/",

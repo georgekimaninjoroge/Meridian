@@ -1,17 +1,17 @@
 /**
- * session.js — Meridian Local Session Manager
+ * session.js -- Meridian Local Session Manager
  *
  * HOW IT WORKS:
  *   1. Firebase keeps the auth token alive via browserLocalPersistence (survives PC off).
  *   2. We also cache the user profile in localStorage so pages can read role/name
  *      instantly without a Firestore round-trip.
- *   3. OFFLINE FAST PATH: if offline + cache exists, skip Firebase entirely — instant load.
+ *   3. OFFLINE FAST PATH: if offline + cache exists, skip Firebase entirely -- instant load.
  *   4. onAuthStateChanged is the source of truth when online.
  *   5. When online, we silently refresh the cached profile from Firestore once per session.
  *   6. Logout clears BOTH Firebase session AND localStorage cache.
  *
  * CONNECTIVITY NOTE:
- *   navigator.onLine only detects whether the network interface is up — NOT whether
+ *   navigator.onLine only detects whether the network interface is up -- NOT whether
  *   packets actually reach the internet (fails silently behind dead routers / captive
  *   portals). We use isReallyOnline() which does a real HEAD probe to Firebase before
  *   trusting the "online" path.
@@ -33,7 +33,7 @@ import {
 import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getFirebaseConfig, getConfig, clearConfig } from "./config.js";
 
-// ─── Firebase config — fetched from edge function ────────────────────────────
+// ─── Firebase config -- fetched from edge function (cached in localStorage) ───
 const firebaseConfig = await getFirebaseConfig();
 const app  = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -48,7 +48,7 @@ let _resolved = false;
 
 // ─── Real connectivity probe ──────────────────────────────────────────────────
 // navigator.onLine = true only means the NIC is up, NOT that packets reach internet.
-// This HEAD probe confirms actual Firebase reachability within 3 s.
+// This HEAD probe confirms actual reachability within 800 ms.
 async function isReallyOnline() {
   if (!navigator.onLine) return false; // NIC down = definitely offline, skip probe
   try {
@@ -75,8 +75,17 @@ export function getSession() {
 
 // ─── Write cache ──────────────────────────────────────────────────────────────
 async function saveSession(uid, profile) {
-  const user    = auth.currentUser;
-  const idToken = user ? await user.getIdToken() : "";
+  const user = auth.currentUser;
+  // OFFLINE FIX: skip getIdToken() when offline -- it forces a network refresh
+  // and hangs. Reuse the cached token instead; it's still valid for Supabase calls.
+  let idToken = "";
+  if (user) {
+    if (navigator.onLine) {
+      try { idToken = await user.getIdToken(); } catch { idToken = getSession()?.idToken || ""; }
+    } else {
+      idToken = getSession()?.idToken || "";
+    }
+  }
   localStorage.setItem(SESSION_KEY, JSON.stringify({
     uid,
     role:        profile.role        || "",
@@ -102,15 +111,15 @@ async function maybeFreshRefresh(uid) {
   try {
     const snap = await getDoc(doc(db, "users", uid));
     if (snap.exists()) saveSession(uid, snap.data());
-  } catch { /* network blip — keep cache */ }
+  } catch { /* network blip -- keep cache */ }
 }
 
 // ─── requireSession ───────────────────────────────────────────────────────────
 // Returns Promise<session> or redirects to auth.html.
 export async function requireSession() {
 
-  // ── INSTANT FAST PATH — cache hit within last 30 min ──────────────────────
-  // Skip ALL network probes if we have a fresh cache — loads in <1ms.
+  // ── INSTANT FAST PATH -- cache hit within last 30 min ──────────────────────
+  // Skip ALL network probes if we have a fresh cache -- loads in <1ms.
   const cached = getSession();
   const cacheAge = cached ? Date.now() - (cached.cachedAt || 0) : Infinity;
   if (cached && cached.uid && cacheAge < REFRESH_MS) {
@@ -120,7 +129,7 @@ export async function requireSession() {
     return cached;
   }
 
-  // ── OFFLINE PATH — stale/missing cache, check connectivity ─────────────────
+  // ── OFFLINE PATH -- stale/missing cache, check connectivity ─────────────────
   const online = await isReallyOnline();
 
   if (!online) {
@@ -131,21 +140,21 @@ export async function requireSession() {
     }
     // Offline + no cache = nothing we can do, send to auth (will show network error)
     window.location.href = "auth.html";
-    return new Promise(() => {}); // never resolves — redirect takes over
+    return new Promise(() => {}); // never resolves -- redirect takes over
   }
 
-  // ── ONLINE PATH — let Firebase confirm the token ───────────────────────────
+  // ── ONLINE PATH -- let Firebase confirm the token ───────────────────────────
   return new Promise((resolve) => {
     onAuthStateChanged(auth, async (user) => {
       if (_resolved) return; // guard against re-fires
 
       if (!user) {
-        // Online, no Firebase session — real logout state
+        // Online, no Firebase session -- real logout state
         // But check: Firebase sometimes fires null briefly on flaky connections
         const stillOnline = await isReallyOnline();
         const cached = getSession();
         if (cached && cached.uid && !stillOnline) {
-          // Went offline mid-check — trust cache
+          // Went offline mid-check -- trust cache
           _resolved = true;
           resolve(cached);
           return;
@@ -156,7 +165,7 @@ export async function requireSession() {
         return;
       }
 
-      // Firebase confirmed user — ensure localStorage cache exists
+      // Firebase confirmed user -- ensure localStorage cache exists
       let cached = getSession();
       if (!cached || cached.uid !== user.uid) {
         clearConfig(); // clear stale config cache on new login
@@ -172,14 +181,14 @@ export async function requireSession() {
           await saveSession(user.uid, snap.data());
           cached = getSession();
         } catch {
-          // Firestore unreachable — if we have a matching cache, trust it
+          // Firestore unreachable -- if we have a matching cache, trust it
           const fallback = getSession();
           if (fallback && fallback.uid === user.uid) {
             _resolved = true;
             resolve(fallback);
             return;
           }
-          // No cache at all — can't continue
+          // No cache at all -- can't continue
           clearSession();
           _resolved = true;
           window.location.href = "auth.html";
@@ -187,7 +196,7 @@ export async function requireSession() {
         }
       }
 
-      // Cache good — silently refresh in background if stale
+      // Cache good -- silently refresh in background if stale
       maybeFreshRefresh(user.uid);
 
       _resolved = true;
