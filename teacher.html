@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Teacher Dashboard | Meridian Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="manifest" href="/manifest.json"> 
+<style>
+*{ margin:0; padding:0; box-sizing:border-box; }
+:root{
+  --bg:#f6f4ef; --surface:#ffffff; --card:#ffffff;
+  --border:rgba(17,24,39,.07); --border2:rgba(17,24,39,.10);
+  --text:#111827; --sub:#6b7280;
+  --accent:#4f6b52; --accent-soft:#e8efe8;
+  --green:#3f7a54; --amber:#b7791f; --red:#c24141;
+  --shadow:0 10px 30px rgba(15,23,42,.05); --r:24px;
+}
+body{ font-family:'Inter',sans-serif; background:radial-gradient(circle at top left,#ece8df 0%,transparent 30%),linear-gradient(to bottom,#faf9f7 0%,#f3f1eb 100%); color:var(--text); min-height:100vh; -webkit-font-smoothing:antialiased; }
+.navbar{ position:sticky; top:0; z-index:100; backdrop-filter:blur(18px); background:rgba(250,249,247,.82); border-bottom:1px solid var(--border); }
+.nav-inner{ max-width:1400px; margin:auto; height:82px; padding:0 36px; display:flex; align-items:center; justify-content:space-between; gap:32px; }
+.brand{ display:flex; align-items:center; gap:14px; flex-shrink:0; }
+.logo{ width:46px; height:46px; border-radius:16px;  display:grid; place-items:center; color:white; font-weight:700; font-size:15px;  }
+.logo img{ width:25px; height:auto; object-fit:contain;   }
+.brand-text{ display:flex; flex-direction:column; }
+.brand-title{ font-size:15px; font-weight:700; letter-spacing:-.02em; }
+.brand-sub{ font-size:12px; color:var(--sub); }
+.nav-links{ display:flex; align-items:center; gap:12px; flex:1; justify-content:center; }
+.nav-btn{ border:none; background:transparent; height:46px; padding:0 18px; border-radius:14px; display:flex; align-items:center; gap:10px; color:var(--sub); font-size:14px; font-weight:500; cursor:pointer; transition:.2s ease; }
+.nav-btn svg{ width:18px; height:18px; }
+.nav-btn:hover,.nav-btn.active{ background:var(--accent-soft); color:var(--accent); }
+.nav-actions{ display:flex; align-items:center; gap:8px; }
+
+/* Search icon + expandable bar */
+.search-wrap{ position:relative; display:flex; align-items:center; }
+.search-icon-btn{ width:44px; height:44px; border:none; background:transparent; border-radius:14px; display:grid; place-items:center; cursor:pointer; color:var(--sub); transition:.2s ease; flex-shrink:0; }
+.search-icon-btn:hover{ background:var(--accent-soft); color:var(--accent); }
+.search-icon-btn svg{ width:18px; height:18px; }
+.search-bar{ position:absolute; right:52px; top:50%; transform:translateY(-50%); width:0; overflow:hidden; transition:width .3s cubic-bezier(.4,0,.2,1),opacity .2s ease; opacity:0; pointer-events:none; }
+.search-bar.open{ width:240px; opacity:1; pointer-events:all; }
+.search-bar input{ width:100%; height:44px; border-radius:14px; border:1px solid var(--border2); background:white; padding:0 16px; font-family:inherit; font-size:14px; color:var(--text); outline:none; box-shadow:0 4px 16px rgba(0,0,0,.08); }
+.search{ display:none; }
+
+/* Hamburger */
+.hamburger{ display:none; width:44px; height:44px; border:none; background:transparent; border-radius:14px; cursor:pointer; flex-direction:column; align-items:center; justify-content:center; gap:5px; transition:.2s ease; }
+.hamburger:hover{ background:var(--accent-soft); }
+.hamburger span{ display:block; width:20px; height:2px; background:var(--sub); border-radius:2px; transition:.25s ease; }
+.hamburger.open span:nth-child(1){ transform:translateY(7px) rotate(45deg); background:var(--accent); }
+.hamburger.open span:nth-child(2){ opacity:0; transform:scaleX(0); }
+.hamburger.open span:nth-child(3){ transform:translateY(-7px) rotate(-45deg); background:var(--accent); }
+
+/* Mobile menu drawer */
+.mobile-menu{ display:none; position:fixed; top:82px; left:0; right:0; background:rgba(250,249,247,.97); backdrop-filter:blur(20px); border-bottom:1px solid var(--border); z-index:99; padding:12px 16px 16px; flex-direction:column; gap:4px; }
+.mobile-menu.open{ display:flex; }
+.mobile-menu .nav-btn{ width:100%; justify-content:flex-start; height:52px; font-size:15px; }
+.mobile-search{ padding:8px 0 4px; position:relative; }
+.mobile-search input{ width:100%; height:46px; border-radius:14px; border:1px solid var(--border2); background:white; padding:0 16px; font-family:inherit; font-size:15px; color:var(--text); outline:none; }
+.mobile-search-dropdown{ background:white; border:1px solid var(--border2); border-radius:14px; margin-top:6px; overflow:hidden; display:none; }
+.mobile-search-dropdown.open{ display:block; }
+.avatar{ width:42px; height:42px; border-radius:50%; background:linear-gradient(135deg,#586f58,#97aa94); display:grid; place-items:center; color:white; font-weight:600; font-size:14px; cursor:pointer; position:relative; flex-shrink:0; transition:.2s ease; user-select:none; }
+.avatar:hover{ box-shadow:0 0 0 3px rgba(79,107,82,.2); }
+.profile-dropdown{ position:absolute; top:calc(100% + 12px); right:0; width:240px; background:white; border:1px solid var(--border2); border-radius:20px; box-shadow:0 20px 48px rgba(15,23,42,.14); overflow:hidden; opacity:0; pointer-events:none; transform:translateY(-8px) scale(.97); transition:opacity .2s ease,transform .2s ease; z-index:300; }
+.profile-dropdown.open{ opacity:1; pointer-events:all; transform:translateY(0) scale(1); }
+.profile-header{ padding:18px 18px 14px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:12px; }
+.profile-avatar-lg{ width:40px; height:40px; border-radius:50%; background:linear-gradient(135deg,#586f58,#97aa94); display:grid; place-items:center; color:white; font-weight:600; font-size:13px; flex-shrink:0; }
+.profile-info-name{ font-size:14px; font-weight:700; letter-spacing:-.02em; }
+.profile-info-role{ font-size:12px; color:var(--sub); margin-top:2px; }
+.profile-menu{ padding:8px; }
+.profile-item{ display:flex; align-items:center; gap:12px; padding:11px 12px; border-radius:12px; cursor:pointer; transition:.15s ease; font-size:14px; font-weight:500; color:var(--text); border:none; background:transparent; width:100%; text-align:left; }
+.profile-item:hover{ background:var(--accent-soft); color:var(--accent); }
+.profile-item svg{ width:16px; height:16px; flex-shrink:0; color:var(--sub); transition:.15s ease; }
+.profile-item:hover svg{ color:var(--accent); }
+.profile-divider{ height:1px; background:var(--border); margin:4px 8px; }
+.profile-item.danger{ color:#c24141; }
+.profile-item.danger:hover{ background:#fbe9e7; color:#c24141; }
+.profile-item.danger svg{ color:#c24141; }
+.avatar-wrap{ position:relative; }
+.container{ max-width:1400px; margin:auto; padding:48px 36px 80px; }
+.hero{ margin-bottom:42px; }
+.hero-eyebrow{ font-size:13px; font-weight:700; color:var(--accent); margin-bottom:12px; text-transform:uppercase; letter-spacing:.08em; }
+.hero h1{ font-size:48px; line-height:1.05; letter-spacing:-.05em; margin-bottom:16px; }
+.hero h1 span{ color:#2f4f35; }
+.hero-actions{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.btn-primary{ height:46px; padding:0 24px; border:none; border-radius:14px; background:var(--accent); color:white; font-size:14px; font-weight:600; display:flex; align-items:center; gap:10px; cursor:pointer; box-shadow:0 10px 24px rgba(79,107,82,.18); }
+.btn-secondary{ height:46px; padding:0 24px; border-radius:14px; border:1px solid var(--border2); background:white; color:var(--text); font-size:14px; font-weight:600; cursor:pointer; }
+
+.stats{ display:grid; grid-template-columns:repeat(4,1fr); gap:20px; margin-bottom:52px; }
+.stat-card{ background:rgba(255,255,255,.82); border:1px solid var(--border); border-radius:var(--r); padding:28px; box-shadow:var(--shadow); }
+.stat-value{ font-size:42px; font-weight:700; letter-spacing:-.05em; margin-bottom:6px; }
+.stat-label{ color:var(--sub); font-size:14px; }
+.stat-change{ margin-top:16px; font-size:13px; font-weight:600; }
+.section{ margin-bottom:52px; }
+.section-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+.section-title{ font-size:24px; font-weight:700; letter-spacing:-.03em; }
+.section-link{ color:var(--accent); font-size:14px; font-weight:600; cursor:pointer; }
+.course-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+.course-card{ background:white; border-radius:var(--r); overflow:hidden; border:1px solid var(--border); box-shadow:var(--shadow); transition:.25s ease; cursor:pointer; }
+.course-card:hover{ transform:translateY(-4px); }
+.course-banner{ height:170px; padding:20px; display:flex; align-items:flex-end; }
+.banner-1{ background:linear-gradient(135deg,#ebe7df 0%,#d8d2c4 100%); }
+.banner-2{ background:linear-gradient(135deg,#e8eee7 0%,#cfd8cc 100%); }
+.banner-3{ background:linear-gradient(135deg,#f0ece4 0%,#ddd5c7 100%); }
+.course-tag{ padding:6px 12px; border-radius:999px; background:rgba(255,255,255,.7); backdrop-filter:blur(10px); font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+.course-body{ padding:24px; }
+.course-title-card{ font-size:18px; font-weight:700; letter-spacing:-.02em; margin-bottom:8px; }
+.course-meta{ font-size:14px; color:var(--sub); margin-bottom:22px; }
+.teacher-course-stats{ display:flex; gap:18px; padding-top:16px; border-top:1px solid var(--border); }
+.tcs{ font-size:13px; }
+.tcs strong{ display:block; font-size:20px; font-weight:700; letter-spacing:-.03em; color:var(--text); }
+.tcs span{ color:var(--sub); }
+.search-dropdown{ position:absolute; top:calc(100% + 8px); right:0; width:300px; background:white; border:1px solid var(--border2); border-radius:16px; box-shadow:0 20px 40px rgba(15,23,42,.12); overflow:hidden; display:none; z-index:200; }
+.search-dropdown.open{ display:block; }
+.search-result{ padding:14px 18px; cursor:pointer; border-bottom:1px solid var(--border); transition:.15s ease; }
+.search-result:last-child{ border-bottom:none; }
+.search-result:hover{ background:var(--accent-soft); }
+.search-result-title{ font-size:14px; font-weight:600; margin-bottom:2px; }
+.search-result-meta{ font-size:12px; color:var(--sub); }
+.search-no-result{ padding:18px; text-align:center; color:var(--sub); font-size:14px; }
+.two-col{ display:grid; grid-template-columns:1fr 380px; gap:20px; align-items:stretch; }
+.schedule{ background:white; border-radius:var(--r); border:1px solid var(--border); overflow:hidden; box-shadow:var(--shadow); display:flex; flex-direction:column; }
+.schedule-end{ margin-top:auto; border-top:1px solid var(--border); padding:14px 24px; display:flex; align-items:center; gap:10px; color:var(--sub); font-size:12px; font-weight:500; }
+.schedule-end::before,.schedule-end::after{ content:''; flex:1; height:1px; background:var(--border); }
+.calendar{ background:white; border-radius:var(--r); border:1px solid var(--border); padding:24px; box-shadow:var(--shadow); align-self:start; }
+.modal-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(6px); z-index:500; display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity .3s ease; }
+.modal-overlay.open{ opacity:1; pointer-events:all; }
+.modal{ background:white; border-radius:28px; width:min(680px,90vw); max-height:80vh; overflow:hidden; display:flex; flex-direction:column; transform:translateY(24px) scale(.97); transition:transform .3s ease; box-shadow:0 40px 80px rgba(0,0,0,.2); }
+.modal-overlay.open .modal{ transform:translateY(0) scale(1); }
+.modal-header{ padding:28px 28px 20px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border); flex-shrink:0; }
+.modal-title{ font-size:20px; font-weight:700; letter-spacing:-.03em; }
+.modal-close{ width:36px; height:36px; border:none; border-radius:10px; background:#f4f1ea; cursor:pointer; display:grid; place-items:center; transition:.2s ease; font-size:18px; color:var(--sub); }
+.modal-close:hover{ background:var(--accent-soft); color:var(--accent); }
+.modal-body{ overflow-y:auto; padding:20px 28px 28px; display:flex; flex-direction:column; gap:14px; }
+.modal-notice{ background:#faf9f7; border:1px solid var(--border); border-radius:18px; padding:20px 22px; display:flex; gap:16px; }
+.modal-notice-dot{ width:10px; height:10px; border-radius:50%; margin-top:5px; flex-shrink:0; }
+.modal-notice-content{ flex:1; }
+.modal-notice-title{ font-size:15px; font-weight:700; margin-bottom:6px; }
+.modal-notice-desc{ color:var(--sub); font-size:14px; line-height:1.7; }
+.modal-notice-time{ color:var(--sub); font-size:12px; white-space:nowrap; margin-top:2px; }
+.schedule-item{ padding:22px 24px; display:grid; grid-template-columns:120px 1fr auto; gap:18px; align-items:center; border-bottom:1px solid var(--border); }
+.schedule-item:last-child{ border-bottom:none; }
+.schedule-time{ color:var(--sub); font-size:13px; }
+.schedule-title{ font-size:15px; font-weight:700; margin-bottom:4px; }
+.schedule-meta{ color:var(--sub); font-size:13px; }
+.badge{ height:32px; padding:0 14px; border-radius:999px; display:flex; align-items:center; font-size:12px; font-weight:700; }
+.live{ background:#fbe9e7; color:var(--red); }
+.next{ background:#f7eedc; color:var(--amber); }
+.done{ background:#ece8df; color:#6b7280; }
+.calendar-top{ display:flex; align-items:center; justify-content:space-between; margin-bottom:22px; }
+.calendar-nav{ width:34px; height:34px; border:none; border-radius:10px; background:#f4f1ea; cursor:pointer; display:grid; place-items:center; transition:.2s ease; }
+.calendar-nav:hover{ background:var(--accent-soft); }
+.calendar-nav svg{ width:16px; height:16px; }
+.calendar-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:8px; }
+.calendar-head{ text-align:center; font-size:11px; font-weight:700; color:var(--sub); padding-bottom:10px; }
+.day{ aspect-ratio:1/1; display:grid; place-items:center; border-radius:14px; font-size:13px; font-weight:500; color:var(--sub); cursor:pointer; transition:.2s ease; }
+.day:hover{ background:#ece8df; }
+.today{ background:var(--accent); color:white; font-weight:700; }
+.selected{ border:1px solid var(--accent); }
+.notice-wrap{ display:flex; flex-direction:column; gap:16px; }
+.notice{ background:white; border-radius:var(--r); border:1px solid var(--border); padding:22px 24px; display:flex; gap:18px; box-shadow:var(--shadow); }
+.notice-dot{ width:10px; height:10px; border-radius:50%; margin-top:6px; }
+.notice-title{ font-size:15px; font-weight:700; margin-bottom:6px; }
+.notice-desc{ color:var(--sub); line-height:1.7; font-size:14px; }
+.notice-time{ margin-left:auto; color:var(--sub); font-size:13px; white-space:nowrap; }
+.notice-badge{ font-size:11px; font-weight:700; padding:3px 10px; border-radius:999px; margin-left:10px; }
+.badge-teacher{ background:#fef3c7; color:#92400e; }
+.badge-all{ background:#e8efe8; color:#2f5f35; }
+@media(max-width:1200px){ .stats{ grid-template-columns:repeat(2,1fr); } .course-grid{ grid-template-columns:1fr 1fr; } }
+@media(max-width:950px){
+  .nav-links{ display:none; }
+  .hamburger{ display:flex; }
+  .search-bar{ display:none !important; }
+  .search-icon-btn{ display:none; }
+  .two-col{ grid-template-columns:1fr; }
+  .course-grid{ grid-template-columns:1fr; }
+  .stats{ grid-template-columns:repeat(2,1fr); }
+  .hero h1{ font-size:36px; }
+  .container{ padding:32px 20px 60px; }
+  .nav-inner{ padding:0 16px; }
+  .brand-sub{ display:none; }
+  .brand-title{ font-size:14px; }
+}
+@media(max-width:600px){
+  .stats{ grid-template-columns:1fr; }
+  .hero h1{ font-size:26px; }
+  .btn-primary,.btn-secondary{ padding:0 16px; font-size:13px; }
+  .schedule-item{ grid-template-columns:1fr auto; gap:10px; }
+  .schedule-time{ grid-column:1/-1; font-size:12px; }
+  .notice{ flex-wrap:wrap; }
+  .notice-time{ margin-left:0; }
+  .stat-card{ padding:22px; }
+}
+</style>
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16x16.png">
+  <link rel="manifest" href="assets/icons/site.webmanifest">
+</head>
+<body>
+
+<header class="navbar">
+  <div class="nav-inner">
+    <div class="brand">
+      <div class="logo"><img src="assets/logo.svg" alt="Meridian"></div>
+      <div class="brand-text">
+        <div class="brand-title">Meridian</div>
+        <div class="brand-sub">Teacher Portal</div>
+      </div>
+    </div>
+    <nav class="nav-links">
+      <button class="nav-btn active" id="navDashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>
+        Dashboard
+      </button>
+      <button class="nav-btn" id="navCourses">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        My Courses
+      </button>
+      <button class="nav-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Students
+      </button>
+      <button class="nav-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6"/></svg>
+        Grading
+      </button>
+      <button class="nav-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        Schedule
+      </button>
+    </nav>
+    <div class="nav-actions" style="position:relative;">
+      <!-- Desktop: search icon → expandable bar -->
+      <div class="search-wrap" id="searchWrap">
+        <button class="search-icon-btn" id="searchIconBtn" aria-label="Search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        </button>
+        <div class="search-bar" id="searchBar">
+          <input id="searchInput" type="text" placeholder="Search courses..." autocomplete="off"/>
+        </div>
+      </div>
+      <div id="searchDropdown" class="search-dropdown"></div>
+      <div class="avatar-wrap">
+        <div class="avatar" id="avatarBtn">
+          <span id="avatarInitials">--</span>
+        </div>
+        <div class="profile-dropdown" id="profileDropdown">
+          <div class="profile-header">
+            <div class="profile-avatar-lg" id="dropdownInitials">--</div>
+            <div>
+              <div class="profile-info-name" id="dropdownName">Loading...</div>
+              <div class="profile-info-role" id="dropdownPortalId">Portal ID</div>
+            </div>
+          </div>
+          <div class="profile-menu">
+            <button class="profile-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              Settings
+            </button>
+            <div class="profile-divider"></div>
+            <button class="profile-item danger">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              Log Out
+            </button>
+          </div>
+        </div>
+      </div>
+      <!-- Mobile hamburger -->
+      <button class="hamburger" id="hamburgerBtn" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- Mobile nav drawer -->
+<div class="mobile-menu" id="mobileMenu">
+  <div class="mobile-search">
+    <input id="mobileSearchInput" type="text" placeholder="Search courses…" autocomplete="off"/>
+    <div id="mobileSearchDropdown" class="mobile-search-dropdown"></div>
+  </div>
+  <button class="nav-btn active" id="mobileNavDashboard">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>
+    Dashboard
+  </button>
+  <button class="nav-btn" id="mobileNavCourses">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+    My Courses
+  </button>
+  <button class="nav-btn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    Students
+  </button>
+  <button class="nav-btn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6"/></svg>
+    Grading
+  </button>
+  <button class="nav-btn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+    Schedule
+  </button>
+</div>
+
+<div id="page-dashboard">
+<main class="container">
+
+  <section class="hero">
+    <div class="hero-eyebrow" id="liveDate">Loading date...</div>
+    <h1 id="greetingText">Good morning, <span id="greetingName">there.</span></h1>
+    <div class="hero-actions">
+      <button class="btn-primary">Join Scheduled Class</button>
+      <button class="btn-secondary">View Timetable</button>
+
+    </div>
+  </section>
+
+  <section class="stats">
+    <div class="stat-card">
+      <div class="stat-value">3</div>
+      <div class="stat-label">Courses Teaching</div>
+      <div class="stat-change" style="color:var(--green)">&#8593; All active this semester</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">Week 9</div>
+      <div class="stat-label">Semester Progress</div>
+      <div class="stat-change" style="color:var(--green)">Week 9 / 14</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">47</div>
+      <div class="stat-label">Submissions to Grade</div>
+      <div class="stat-change" style="color:var(--amber)">&#9651; 12 overdue review</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="statTotalStudents">142</div>
+      <div class="stat-label">Total Students</div>
+      <div class="stat-change" style="color:var(--green)">Across all courses</div>
+    </div>
+  </section>
+
+  <section class="section" id="section-courses">
+    <div class="section-head"><div class="section-title">My Courses</div></div>
+    <div class="course-grid">
+
+    <!-- Course cards rendered dynamically from IndexedDB by JS below -->
+
+    </div>
+  </section>
+
+  <section class="section" id="section-schedule">
+    <div class="section-head"><div class="section-title">Today's Teaching Schedule</div></div>
+    <div class="two-col">
+      <div class="schedule">
+        <div class="schedule-item">
+          <div class="schedule-time">8:00 AM - 11:00 AM</div>
+          <div><div class="schedule-title">Computer Security — DCS311</div><div class="schedule-meta">Lab 4 &middot; Main Campus &middot; 48 students</div></div>
+          <div class="badge live">Now</div>
+        </div>
+        <div class="schedule-item">
+          <div class="schedule-time">2:00 PM - 5:00 PM</div>
+          <div><div class="schedule-title">Software Engineering — DCS341</div><div class="schedule-meta">Zoom Session &middot; Remote &middot; 43 students</div></div>
+          <div class="badge next">Next</div>
+        </div>
+        <div class="schedule-item">
+          <div class="schedule-time">Friday 8:00 AM</div>
+          <div><div class="schedule-title">OOP — DCS312</div><div class="schedule-meta">Block B &middot; Room 201 &middot; 51 students</div></div>
+          <div class="badge done">Upcoming</div>
+        </div>
+        <div class="schedule-end">No more sessions today</div>
+      </div>
+      <div class="calendar">
+        <div class="calendar-top">
+          <button class="calendar-nav" id="prevMonth">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <div class="section-title" id="calendarTitle" style="font-size:18px;"></div>
+          <button class="calendar-nav" id="nextMonth">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
+        </div>
+        <div class="calendar-grid" id="calendarGrid"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <div class="section-title">Announcements</div>
+      <div class="section-link" id="viewAllBtn">View all</div>
+    </div>
+    <div class="notice-wrap">
+      <div class="notice">
+        <div class="notice-dot" style="background:var(--amber)"></div>
+        <div>
+          <div class="notice-title">Grading Deadline — CAT 1 Results <span class="notice-badge badge-teacher">Teachers</span></div>
+          <div class="notice-desc">All CAT 1 results must be submitted to the examination office by Friday 23rd May. Kindly publish student results before submission.</div>
+        </div>
+        <div class="notice-time">1h ago</div>
+      </div>
+      <div class="notice">
+        <div class="notice-dot" style="background:var(--green)"></div>
+        <div>
+          <div class="notice-title">Semester CAT Timetable Released <span class="notice-badge badge-all">All</span></div>
+          <div class="notice-desc">Mid-semester CAT schedules are now available on the portal. Students have been notified to confirm venues before Monday.</div>
+        </div>
+        <div class="notice-time">2h ago</div>
+      </div>
+    </div>
+  </section>
+
+</main>
+</div><!-- #page-dashboard -->
+
+<div id="page-course" style="display:none;"></div>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal" style="width:min(720px,92vw);max-height:88vh;">
+    <div class="modal-header">
+      <div class="modal-title">Settings</div>
+      <button class="modal-close" id="settingsModalClose">&#x2715;</button>
+    </div>
+    <div id="settingsModalBody" style="overflow-y:auto;flex:1;min-height:0;"></div>
+  </div>
+</div>
+
+
+<!-- ANNOUNCEMENTS MODAL -->
+<div class="modal-overlay" id="announcementsModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">All Announcements</div>
+      <button class="modal-close" id="modalClose">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-notice"><div class="modal-notice-dot" style="background:var(--amber)"></div><div class="modal-notice-content"><div class="modal-notice-title">Grading Deadline — CAT 1 Results <span class="notice-badge badge-teacher">Teachers</span></div><div class="modal-notice-desc">All CAT 1 results must be submitted to the examination office by Friday 23rd May. Publish student results before submission.</div></div><div class="modal-notice-time">1h ago</div></div>
+      <div class="modal-notice"><div class="modal-notice-dot" style="background:var(--green)"></div><div class="modal-notice-content"><div class="modal-notice-title">Semester CAT Timetable Released <span class="notice-badge badge-all">All</span></div><div class="modal-notice-desc">Mid-semester CAT schedules are now available on the portal.</div></div><div class="modal-notice-time">2h ago</div></div>
+      <div class="modal-notice"><div class="modal-notice-dot" style="background:var(--accent)"></div><div class="modal-notice-content"><div class="modal-notice-title">Senate Approved New Assessment Policy <span class="notice-badge badge-teacher">Teachers</span></div><div class="modal-notice-desc">The academic senate has approved a revised continuous assessment weighting. CATs now carry 40% of the total unit score effective next semester.</div></div><div class="modal-notice-time">Yesterday</div></div>
+      <div class="modal-notice"><div class="modal-notice-dot" style="background:var(--red)"></div><div class="modal-notice-content"><div class="modal-notice-title">Upload Attendance Records — Week 8 <span class="notice-badge badge-teacher">Teachers</span></div><div class="modal-notice-desc">Attendance records for Week 8 must be uploaded to the system by end of day Friday. Contact the registry for any discrepancies.</div></div><div class="modal-notice-time">2 days ago</div></div>
+      <div class="modal-notice"><div class="modal-notice-dot" style="background:var(--sub)"></div><div class="modal-notice-content"><div class="modal-notice-title">Campus Wi-Fi Maintenance <span class="notice-badge badge-all">All</span></div><div class="modal-notice-desc">Scheduled maintenance on the campus network will take place this Saturday from 2 AM - 6 AM. Expect brief connectivity interruptions.</div></div><div class="modal-notice-time">4 days ago</div></div>
+      <div class="modal-notice"><div class="modal-notice-dot" style="background:var(--accent)"></div><div class="modal-notice-content"><div class="modal-notice-title">Library Extended Hours <span class="notice-badge badge-all">All</span></div><div class="modal-notice-desc">The main library will remain open until midnight every weekday for the remainder of the semester to support exam preparation.</div></div><div class="modal-notice-time">3 days ago</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* scopeCSS — prefix all non-at-rule selectors with a given scope */
+function scopeCSS(css, prefix) {
+  const tokens = css.split(/([\{\}])/);
+  let result = '', depth = 0, skipDepth = -1, i = 0;
+  while (i < tokens.length) {
+    const t = tokens[i];
+    if (t === '{') { depth++; result += '{'; }
+    else if (t === '}') {
+      if (skipDepth === depth) skipDepth = -1;
+      depth--; result += '}';
+    } else {
+      const trimmed = t.trim();
+      const next = tokens[i + 1];
+      if (next === '{' && trimmed) {
+        if (/^@keyframes|^@font-face/i.test(trimmed)) { skipDepth = depth + 1; result += t; }
+        else if (skipDepth !== -1) { result += t; }
+        else if (trimmed.startsWith('@')) { result += t; }
+        else {
+          const scoped = trimmed.split(',').map(s => {
+            s = s.trim();
+            return (!s || s === '*' || s.startsWith(':root')) ? s : prefix + ' ' + s;
+          }).join(', ');
+          result += t.replace(trimmed, scoped);
+        }
+      } else { result += t; }
+    }
+    i++;
+  }
+  return result;
+}
+
+const now = new Date();
+document.getElementById("liveDate").textContent = now.toLocaleDateString("en-US",{ weekday:"long", day:"numeric", month:"long", year:"numeric" });
+
+/* CALENDAR */
+const calendarGrid = document.getElementById("calendarGrid");
+const calendarTitle = document.getElementById("calendarTitle");
+const prevMonthBtn = document.getElementById("prevMonth");
+const nextMonthBtn = document.getElementById("nextMonth");
+let currentDate = new Date();
+
+function renderCalendar(date){
+  calendarGrid.innerHTML = "";
+  const month = date.getMonth(), year = date.getFullYear();
+  calendarTitle.textContent = date.toLocaleDateString("en-US",{ month:"long", year:"numeric" });
+  ["S","M","T","W","T","F","S"].forEach(d=>{ const h=document.createElement("div"); h.className="calendar-head"; h.textContent=d; calendarGrid.appendChild(h); });
+  const firstDay = new Date(year,month,1).getDay();
+  const daysInMonth = new Date(year,month+1,0).getDate();
+  for(let i=0;i<firstDay;i++){ const e=document.createElement("div"); e.className="day"; calendarGrid.appendChild(e); }
+  for(let day=1;day<=daysInMonth;day++){
+    const el=document.createElement("div"); el.className="day"; el.textContent=day;
+    const isToday = day===now.getDate() && month===now.getMonth() && year===now.getFullYear();
+    if(isToday) el.classList.add("today");
+    el.addEventListener("click",()=>{ document.querySelectorAll(".day").forEach(d=>d.classList.remove("selected")); if(!isToday) el.classList.add("selected"); });
+    calendarGrid.appendChild(el);
+  }
+}
+prevMonthBtn.addEventListener("click",()=>{ currentDate.setMonth(currentDate.getMonth()-1); renderCalendar(currentDate); });
+nextMonthBtn.addEventListener("click",()=>{ currentDate.setMonth(currentDate.getMonth()+1); renderCalendar(currentDate); });
+renderCalendar(currentDate);
+
+/* CONNECTION */
+const connectionPill = document.getElementById("connectionPill");
+const connectionText = document.getElementById("connectionText");
+function setOnline(){ connectionPill.className="live-pill online"; connectionText.textContent="Online"; }
+function setOffline(){ connectionPill.className="live-pill offline"; connectionText.textContent="Offline"; }
+async function checkInternet(){ if(!navigator.onLine){ setOffline(); return; } try{ await fetch("https://www.google.com/favicon.ico?_="+Date.now(),{mode:"no-cors",cache:"reload"}); setOnline(); }catch{ setOffline(); } }
+window.addEventListener("offline",setOffline);
+window.addEventListener("online",checkInternet);
+checkInternet();
+setInterval(checkInternet,5000);
+
+/* SEARCH — expandable icon bar (desktop) */
+const teacherCourses=[
+  {title:"Computer Security",code:"DCS 311",meta:"Fridays · Hybrid"},
+  {title:"Object-Oriented Programming",code:"DCS 312",meta:"Tuesdays · Online"},
+  {title:"Software Engineering",code:"DCS 341",meta:"Wednesdays · Hybrid"},
+];
+const searchIconBtn=document.getElementById("searchIconBtn");
+const searchBar=document.getElementById("searchBar");
+const searchInput=document.getElementById("searchInput");
+const searchDropdown=document.getElementById("searchDropdown");
+searchIconBtn.addEventListener("click",(e)=>{ e.stopPropagation(); searchBar.classList.toggle("open"); if(searchBar.classList.contains("open")) searchInput.focus(); });
+document.addEventListener("click",(e)=>{ if(!e.target.closest("#searchWrap")){ searchBar.classList.remove("open"); searchDropdown.classList.remove("open"); searchInput.value=""; } });
+function renderSearchResults(q, input, dropdown){
+  if(!q){ dropdown.classList.remove("open"); return; }
+  const matches=teacherCourses.filter(c=>c.title.toLowerCase().includes(q)||c.code.toLowerCase().includes(q));
+  dropdown.innerHTML=matches.length ? matches.map(c=>`<div class="search-result"><div class="search-result-title">${c.title}</div><div class="search-result-meta">${c.code} · ${c.meta}</div></div>`).join("") : `<div class="search-no-result">No courses found</div>`;
+  dropdown.classList.add("open");
+}
+searchInput.addEventListener("input",()=>renderSearchResults(searchInput.value.trim().toLowerCase(),searchInput,searchDropdown));
+
+/* HAMBURGER */
+const hamburgerBtn=document.getElementById("hamburgerBtn");
+const mobileMenu=document.getElementById("mobileMenu");
+hamburgerBtn.addEventListener("click",(e)=>{ e.stopPropagation(); hamburgerBtn.classList.toggle("open"); mobileMenu.classList.toggle("open"); });
+document.addEventListener("click",(e)=>{ if(!e.target.closest(".navbar")&&!e.target.closest(".mobile-menu")){ hamburgerBtn.classList.remove("open"); mobileMenu.classList.remove("open"); } });
+
+/* MOBILE SEARCH */
+const mobileSearchInput=document.getElementById("mobileSearchInput");
+const mobileSearchDropdown=document.getElementById("mobileSearchDropdown");
+mobileSearchInput.addEventListener("input",()=>renderSearchResults(mobileSearchInput.value.trim().toLowerCase(),mobileSearchInput,mobileSearchDropdown));
+
+/* Mobile nav btns mirror desktop active state */
+document.getElementById("mobileNavDashboard").addEventListener("click",()=>{ showDashboard(); hamburgerBtn.classList.remove("open"); mobileMenu.classList.remove("open"); });
+document.getElementById("mobileNavCourses").addEventListener("click",()=>{ hamburgerBtn.classList.remove("open"); mobileMenu.classList.remove("open"); });
+
+/* SCROLL NAV */
+function scrollToSection(id){
+  const el = document.getElementById(id);
+  if(el) el.scrollIntoView({ behavior:"smooth", block:"start" });
+}
+function setNavActive(btn){
+  document.querySelectorAll(".nav-links .nav-btn").forEach(b=>b.classList.remove("active"));
+  if(btn) btn.classList.add("active");
+}
+window.setNavActive = setNavActive;
+
+document.getElementById("navCourses").addEventListener("click",()=>{
+  setNavActive(document.getElementById("navCourses"));
+  if (pageCourse.style.display !== "none" && pageCourse.style.display !== "") {
+    showDashboard();
+  }
+  setTimeout(() => scrollToSection("section-courses"), 50);
+});
+document.getElementById("mobileNavCourses").addEventListener("click",()=>{ scrollToSection("section-courses"); });
+
+/* MODAL */
+const modal=document.getElementById("announcementsModal");
+const viewAllBtn=document.getElementById("viewAllBtn");
+const modalClose=document.getElementById("modalClose");
+viewAllBtn.addEventListener("click",()=>modal.classList.add("open"));
+modalClose.addEventListener("click",()=>modal.classList.remove("open"));
+modal.addEventListener("click",(e)=>{ if(e.target===modal) modal.classList.remove("open"); });
+document.addEventListener("keydown",(e)=>{ if(e.key==="Escape") modal.classList.remove("open"); });
+
+
+/* SETTINGS MODAL */
+(function(){
+  const settingsModal      = document.getElementById("settingsModal");
+  const settingsModalBody  = document.getElementById("settingsModalBody");
+  const settingsModalClose = document.getElementById("settingsModalClose");
+  let settingsLoaded = false;
+
+  async function openSettingsModal() {
+    document.getElementById("profileDropdown").classList.remove("open");
+    settingsModal.classList.add("open");
+    document.body.style.overflow = "hidden";
+    if (settingsLoaded) return;
+    settingsLoaded = true;
+    try {
+      const res  = await fetch("settings.html", { cache: "no-store" });
+      const html = await res.text();
+      const parser = new DOMParser();
+      const doc  = parser.parseFromString(html, "text/html");
+
+      // Inject scoped CSS
+      const styleEl = doc.querySelector("style");
+      if (styleEl) {
+        const s = document.createElement("style");
+        s.id = "settings-page-styles";
+        s.textContent = scopeCSS(styleEl.textContent, "#settingsModalBody");
+        document.head.appendChild(s);
+      }
+
+      // Inject scroll content
+      const scroll = doc.getElementById("settingsScroll");
+      if (scroll) settingsModalBody.appendChild(scroll);
+
+      // Pass session + flags
+      window._settingsSession  = window._meridianSession || null;
+      window._settingsEmbedded = true;
+
+      // Live-update greeting + avatar when name is saved
+      window._settingsOnSave = (newFirst) => {
+        const h = new Date().getHours();
+        const greet = h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
+        const greetEl = document.getElementById("greetingText");
+        if (greetEl) greetEl.innerHTML = `${greet}, <span id="greetingName">${newFirst}.</span>`;
+        try {
+          const raw = localStorage.getItem("meridian_session");
+          if (!raw) return;
+          const s = JSON.parse(raw);
+          const dn = s.displayName || s.portalId || "";
+          const parts = dn.trim().split(" ");
+          const ini = parts.length >= 2
+            ? (parts[0][0] + parts[parts.length-1][0]).toUpperCase()
+            : dn.slice(0,2).toUpperCase();
+          ["avatarInitials","dropdownInitials"].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = ini || "--";
+          });
+          const dnEl = document.getElementById("dropdownName");
+          if (dnEl) dnEl.textContent = dn;
+        } catch {}
+      };
+
+      // Execute module script from settings.html
+      const moduleScript = [...doc.querySelectorAll("script")].find(s => s.type === "module");
+      if (moduleScript) {
+        const s = document.createElement("script");
+        s.type = "module";
+        s.textContent = moduleScript.textContent;
+        document.body.appendChild(s);
+      }
+    } catch (err) {
+      console.error("[settings modal]", err);
+      settingsModalBody.innerHTML = '<div style="padding:32px;text-align:center;color:#6b7280;">Failed to load settings.</div>';
+    }
+  }
+
+  function closeSettingsModal() {
+    settingsModal.classList.remove("open");
+    document.body.style.overflow = "";
+  }
+
+  // Wire Settings button (matches by text content)
+  document.querySelectorAll(".profile-item").forEach(btn => {
+    if (btn.textContent.trim() === "Settings") btn.addEventListener("click", openSettingsModal);
+  });
+
+  settingsModalClose.addEventListener("click", closeSettingsModal);
+  settingsModal.addEventListener("click", e => { if (e.target === settingsModal) closeSettingsModal(); });
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && settingsModal.classList.contains("open")) closeSettingsModal();
+  });
+})();
+
+/* PROFILE DROPDOWN */
+const avatarBtn=document.getElementById("avatarBtn");
+const profileDropdown=document.getElementById("profileDropdown");
+avatarBtn.addEventListener("click",(e)=>{ e.stopPropagation(); profileDropdown.classList.toggle("open"); searchDropdown.classList.remove("open"); });
+document.addEventListener("click",(e)=>{ if(!e.target.closest(".avatar-wrap")) profileDropdown.classList.remove("open"); });
+</script>
+
+<!-- FIREBASE AUTH GUARD -->
+<script type="module">
+import { requireSession, logout } from "./JS/session.js";
+import { syncFromSupabase } from "./JS/supabase.js";
+
+// Guard: redirect to auth.html if not logged in
+const session = await requireSession();
+window._meridianSession = session; // expose for settings modal
+
+// Role check - students go back to dashboard
+if (session.role !== "teacher") { window.location.href = "index.html"; }
+
+// Sync latest data from Supabase into IndexedDB before first render
+await syncFromSupabase().catch(err => console.warn("[teacher] Supabase sync failed:", err));
+
+// Populate UI from localStorage cache (instant, zero Firestore hits)
+const displayName = session.displayName || session.portalId || "Teacher";
+const parts       = displayName.trim().split(" ");
+const initials    = parts.length >= 2
+  ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+  : displayName.slice(0, 2).toUpperCase();
+
+document.getElementById("avatarInitials").textContent   = initials;
+document.getElementById("dropdownInitials").textContent = initials;
+document.getElementById("dropdownName").textContent     = displayName;
+document.getElementById("dropdownPortalId").textContent = session.portalId || "";
+
+const firstName = parts[0];
+const h = new Date().getHours();
+const greeting = h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
+document.getElementById("greetingText").innerHTML = `${greeting}, <span id="greetingName">${firstName}.</span>`;
+
+// Logout
+document.querySelector(".profile-item.danger").addEventListener("click", () => logout());
+
+/* ============================================================
+   COURSE PAGE NAVIGATION — fetch from teacher-course.html
+   ============================================================ */
+const pageDashboard = document.getElementById("page-dashboard");
+const pageCourse    = document.getElementById("page-course");
+
+let COURSE_CODES = [];
+
+const BANNER_PALETTE = [
+  { from:"#6b6256", to:"#9c9082" },
+  { from:"#4f6b52", to:"#7f9679" },
+  { from:"#7a6e5f", to:"#a89e8e" },
+  { from:"#4a6272", to:"#7a9aaa" },
+  { from:"#6a5a72", to:"#9a8aaa" },
+  { from:"#6b6840", to:"#9c9e72" },
+];
+
+let _cachedCourseTeachers = null;
+
+async function renderTeacherCourseGrid() {
+  const { getAll, getLecturesByCourse, getAssignmentsByCourse } = await import("./JS/db.js");
+  const { fetchCourseTeachers, fetchEnrollments } = await import("./JS/supabase.js");
+  const enrollments_ = await fetchEnrollments().catch(() => []);
+  const allCourses = await getAll("courses");
+
+  // Fetch course_teachers from network; fall back to last good result
+  let assignments_ = _cachedCourseTeachers;
+  try {
+    const fresh = await fetchCourseTeachers();
+    if (fresh && fresh.length >= 0) {
+      _cachedCourseTeachers = fresh;
+      assignments_ = fresh;
+    }
+  } catch(e) {
+    console.warn("[teacher] fetchCourseTeachers failed, using cache:", e);
+  }
+
+  const myCourseIds = assignments_
+    ? new Set(assignments_.filter(ct => ct.teacher_id === session.uid).map(ct => ct.course_id))
+    : new Set(allCourses.map(c => c.id)); // last resort: show all courses
+  const courses = allCourses.filter(c => myCourseIds.has(c.id));
+  const grid = document.querySelector(".course-grid");
+  if (!grid) return;
+
+  if (courses.length === 0) {
+    grid.innerHTML = `<div style="grid-column:1/-1;color:var(--sub);padding:24px 0;">No courses assigned to you yet. Contact your school admin.</div>`;
+    COURSE_CODES = [];
+    return;
+  }
+
+  COURSE_CODES = courses.map((c, i) => ({
+    code: c.id,
+    from: BANNER_PALETTE[i % BANNER_PALETTE.length].from,
+    to:   BANNER_PALETTE[i % BANNER_PALETTE.length].to,
+  }));
+
+  const cardsHtml = await Promise.all(courses.map(async (c, i) => {
+    const lectures = await getLecturesByCourse(c.id);
+    const assignments = await getAssignmentsByCourse(c.id);
+    const weeksDone = lectures.length ? Math.max(...lectures.map(l => l.weekNumber || 0)) : 0;
+    const studentCount = enrollments_.filter(e => e.course_id === c.id).length;
+    return `
+      <div class="course-card" data-course-idx="${i}">
+        <div class="course-banner" style="background:linear-gradient(135deg,${BANNER_PALETTE[i % BANNER_PALETTE.length].from} 0%,${BANNER_PALETTE[i % BANNER_PALETTE.length].to} 100%);"><div class="course-tag">${c.code}</div></div>
+        <div class="course-body">
+          <div class="course-title-card">${c.title}</div>
+          <div class="course-meta">${c.schedule || ""} &middot; ${(c.mode||"").charAt(0).toUpperCase()+(c.mode||"").slice(1)}</div>
+          <div class="teacher-course-stats">
+            <div class="tcs"><strong>${studentCount}</strong><span>Students</span></div>
+            <div class="tcs"><strong>${assignments.length}</strong><span>Assignments</span></div>
+            <div class="tcs"><strong>${weeksDone}</strong><span>Weeks done</span></div>
+          </div>
+        </div>
+      </div>`;
+  }));
+
+  grid.innerHTML = cardsHtml.join("");
+
+  const statEl = document.querySelector(".stats .stat-card:nth-child(1) .stat-value");
+  if (statEl) statEl.textContent = courses.length;
+
+  const _courseIds = new Set(courses.map(c => c.id));
+  const distinctStudents = new Set(enrollments_.filter(e => _courseIds.has(e.course_id)).map(e => e.student_id));
+  const totalStudentsEl = document.getElementById("statTotalStudents");
+  if (totalStudentsEl) totalStudentsEl.textContent = distinctStudents.size;
+
+  document.querySelectorAll(".course-card").forEach((card, i) => {
+    card.addEventListener("click", () => openCourse(i));
+  });
+}
+
+let teacherCourseHtmlCache = null;
+
+history.replaceState({ page: "dashboard" }, "", "");
+
+function showDashboard() {
+  pageDashboard.style.display = "";
+  pageCourse.style.display = "none";
+  window.setNavActive(document.getElementById("navDashboard"));
+  window.scrollTo(0, 0);
+  history.pushState({ page: "dashboard" }, "", "");
+  // Re-render grid so course cards are always fresh on return
+  renderTeacherCourseGrid().catch(() => {});
+}
+
+async function openCourse(idx) {
+  const { code, from, to } = COURSE_CODES[idx];
+  sessionStorage.setItem("activeCourse", code);
+  sessionStorage.setItem("activeCourseFrom", from);
+  sessionStorage.setItem("activeCourseTo", to);
+
+  // Always fetch fresh — bypasses SW cache so edits reflect immediately
+  const res = await fetch("teacher_course.html", { cache: "no-store" });
+  teacherCourseHtmlCache = await res.text();
+
+  const parser = new DOMParser();
+  const doc2 = parser.parseFromString(teacherCourseHtmlCache, "text/html");
+
+  // Always re-inject styles (removes stale cached version)
+  const oldStyle = document.getElementById("teacher-course-page-styles");
+  if (oldStyle) oldStyle.remove();
+  const styleEl = doc2.querySelector("style");
+  if (styleEl) {
+    const s = document.createElement("style");
+    s.id = "teacher-course-page-styles";
+    s.textContent = scopeCSS(styleEl.textContent, "#page-course");
+    document.head.appendChild(s);
+  }
+
+  // Cancel any active realtime subscription from previous course open
+  // (stored on window so it survives script re-injection)
+  if (typeof window._tcUnsub === "function") { window._tcUnsub(); window._tcUnsub = null; }
+
+  const root = doc2.getElementById("course-root");
+  if (root) {
+    pageCourse.innerHTML = "";
+    pageCourse.appendChild(root);
+  }
+
+  // Signal embedded mode — hides standalone nav + disables hamburger inside course
+  window._embeddedInDashboard = true;
+
+  // Always re-execute course script so initTeacherCourse picks up latest data
+  window.initTeacherCourse = null;
+  // Remove stale injected script — prevents duplicate listeners on re-open
+  const _oldScript = document.getElementById("teacher-course-injected-script");
+  if (_oldScript) _oldScript.remove();
+  const scriptEl = doc2.querySelector("script");
+  if (scriptEl) {
+    const s = document.createElement("script");
+    s.id = "teacher-course-injected-script";
+    // Wrap in IIFE — prevents "already declared" SyntaxError when re-injected
+    // (top-level let/const in inline scripts pollute global scope across re-injections)
+    s.textContent = ";(function(){" + scriptEl.textContent + "})();";
+    document.body.appendChild(s);
+  }
+
+  if (typeof window.initTeacherCourse === "function") window.initTeacherCourse(code, from, to);
+
+  pageDashboard.style.display = "none";
+  pageCourse.style.display = "";
+  window.scrollTo(0, 0);
+  history.pushState({ page: "course", idx }, "", "");
+}
+
+window.addEventListener("popstate", e => {
+  if (e.state && e.state.page === "course") openCourse(e.state.idx);
+  else showDashboard();
+});
+
+await renderTeacherCourseGrid();
+
+// ── Realtime: pick up assignment/course changes without needing a reload ──
+// If an admin assigns/unassigns this teacher, or a course is added/edited,
+// the dashboard updates live instead of requiring a hard refresh.
+import("./JS/supabase.js").then(({ subscribeToTable, syncTable }) => {
+  const refresh = (table) => async () => {
+    await syncTable(table);
+    await renderTeacherCourseGrid();
+  };
+  subscribeToTable("course_teachers", refresh("courses"))
+    .catch(err => console.warn("[teacher] Realtime course_teachers failed:", err));
+  subscribeToTable("courses", refresh("courses"))
+    .catch(err => console.warn("[teacher] Realtime courses failed:", err));
+});
+
+document.getElementById("navDashboard").addEventListener("click", showDashboard);
+
+// Resume course if coming back from live.html or assessment.html
+const _resumeCode = sessionStorage.getItem('openCourseOnLoad');
+if (_resumeCode) {
+  sessionStorage.removeItem('openCourseOnLoad');
+  let _idx = COURSE_CODES.findIndex(c => c.code === _resumeCode);
+  if (_idx !== -1) {
+    openCourse(_idx);
+  } else {
+    renderTeacherCourseGrid().then(() => {
+      const _idx2 = COURSE_CODES.findIndex(c => c.code === _resumeCode);
+      if (_idx2 !== -1) openCourse(_idx2);
+    }).catch(() => {});
+  }
+}
+</script>
+<!---Service Worker Injection--->
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/sw.js")
+    .then(reg => console.log("SW registered:", reg))
+    .catch(err => console.log("SW failed:", err));
+
+  let _swRefreshed = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (_swRefreshed) return;
+    _swRefreshed = true;
+    window.location.reload();
+  });
+}
+</script>
+</body>
+</html>
